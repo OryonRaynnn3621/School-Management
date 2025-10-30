@@ -1,4 +1,4 @@
-//import FormModal from "@/components/FormModal";
+import FormModal from "@/components/FormModal";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
@@ -55,7 +55,8 @@ const AssignmentListPage = () => {
                 <div className="flex items-center gap-2">
                     {role === "admin" || role === "teacher" && (
                         <>
-
+                            <FormModal table="assignment" type="update" data={item} />
+                            <FormModal table="assignment" type="delete" id={item.id} />
                         </>
                     )}
                 </div>
@@ -79,7 +80,7 @@ const AssignmentListPage = () => {
                         <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
                             <Image src="/sort.png" alt="" width={14} height={14} />
                         </button>
-
+                        {role === "admin" || role === "teacher" && <FormModal table="assignment" type="create" />}
                     </div>
                 </div>
             </div>
