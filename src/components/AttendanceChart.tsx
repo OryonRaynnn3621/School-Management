@@ -14,27 +14,27 @@ import {
 
 const data = [
   {
-    name: "Mon",
+    name: "TH2",
     present: 60,
     absent: 40,
   },
   {
-    name: "Tue",
+    name: "TH3",
     present: 70,
     absent: 60,
   },
   {
-    name: "Wed",
+    name: "TH4",
     present: 90,
     absent: 75,
   },
   {
-    name: "Thu",
+    name: "TH5",
     present: 90,
     absent: 75,
   },
   {
-    name: "Fri",
+    name: "TH6",
     present: 65,
     absent: 55,
   },
@@ -44,7 +44,7 @@ const AttendanceChart = () => {
   return (
     <div className="bg-white rounded-lg p-4 h-full">
       <div className="flex justify-between items-center">
-        <h1 className="text-lg font-semibold">Attendance</h1>
+        <h1 className="text-lg font-semibold">Tham dự lớp</h1>
         <Image src="/moreDark.png" alt="" width={20} height={20} />
       </div>
       <ResponsiveContainer width="100%" height="90%">

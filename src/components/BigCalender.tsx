@@ -9,7 +9,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { useState } from "react";
 
 const localizer = momentLocalizer(moment);
-moment.locale("en");
+
 
 const BigCalendar = () => {
   const [view, setView] = useState<View>(Views.WORK_WEEK);
