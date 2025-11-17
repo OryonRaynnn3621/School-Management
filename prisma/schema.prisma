@@ -192,3 +192,11 @@ enum Day {
   THURSDAY
   FRIDAY
 }
+
+generator erd {
+  provider = "prisma-erd-generator"
+}
+generator uml {
+  provider = "prisma-uml-generator"
+  output = "../prisma-uml"
+}
