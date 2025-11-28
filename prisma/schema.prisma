@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -195,8 +194,4 @@ enum Day {
 
 generator erd {
   provider = "prisma-erd-generator"
-}
-generator uml {
-  provider = "prisma-uml-generator"
-  output = "../prisma-uml"
 }

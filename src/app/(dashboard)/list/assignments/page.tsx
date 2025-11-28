@@ -2,11 +2,13 @@ import FormModal from "@/components/FormModal";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import { role } from "@/lib/data";
+import { currentUserId, role } from "@/lib/utils";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/setting";
 import { Assignment, Class, Prisma, Subject, Teacher } from "@prisma/client";
 import Image from "next/image";
+
+
 
 type AssignmentList = Assignment & {
   lesson: {
@@ -18,27 +20,31 @@ type AssignmentList = Assignment & {
 
 const columns = [
   {
-    header: "Subject Name",
+    header: "Môn học",
     accessor: "name",
   },
   {
-    header: "Class",
+    header: "Lớp",
     accessor: "class",
   },
   {
-    header: "Teacher",
+    header: "Giảng viên",
     accessor: "teacher",
     className: "hidden md:table-cell",
   },
   {
-    header: "Due Date",
+    header: "Ngày đến hạn",
     accessor: "dueDate",
     className: "hidden md:table-cell",
   },
-  {
-    header: "Actions",
-    accessor: "action",
-  },
+  ...(role === "admin" || role === "teacher"
+    ? [
+      {
+        header: "Hoạt động",
+        accessor: "action",
+      },
+    ]
+    : []),
 ];
 
 
@@ -67,6 +73,7 @@ const renderRow = (item: AssignmentList) => (
     </td>
   </tr>
 );
+
 
 
 const AssignmentListPage = async ({
@@ -107,6 +114,35 @@ const AssignmentListPage = async ({
     }
   }
 
+  // ROLE CONDITIONS
+
+  switch (role) {
+    case "admin":
+      break;
+    case "teacher":
+      query.lesson.teacherId = currentUserId!;
+      break;
+    case "student":
+      query.lesson.class = {
+        students: {
+          some: {
+            id: currentUserId!,
+          },
+        },
+      };
+      break;
+    case "parent":
+      query.lesson.class = {
+        students: {
+          some: {
+            parentId: currentUserId!,
+          },
+        },
+      };
+      break;
+    default:
+      break;
+  }
 
   const [data, count] = await prisma.$transaction([
     prisma.assignment.findMany({
@@ -131,7 +167,7 @@ const AssignmentListPage = async ({
       {/* TOP */}
       <div className="flex items-center justify-between">
         <h1 className="hidden md:block text-lg font-semibold">
-          All Assignments
+          Bài Tập
         </h1>
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <TableSearch />

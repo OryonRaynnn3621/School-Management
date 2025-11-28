@@ -2,47 +2,47 @@ import FormModal from "@/components/FormModal";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import { eventsData, role } from "@/lib/data";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/setting";
+import { currentUserId, role } from "@/lib/utils";
 import { Class, Prisma, Event } from "@prisma/client";
 import Image from "next/image";
 
 type EventList = Event & { class: Class };
+
 const columns = [
   {
-    header: "Title",
+    header: "Tiêu đề",
     accessor: "title",
   },
   {
-    header: "Class",
+    header: "Lớp",
     accessor: "class",
   },
   {
-    header: "Date",
+    header: "Ngày",
     accessor: "date",
     className: "hidden md:table-cell",
   },
   {
-    header: "Start Time",
+    header: "Bắt đầu",
     accessor: "startTime",
     className: "hidden md:table-cell",
   },
   {
-    header: "End Time",
+    header: "Kết thúc",
     accessor: "endTime",
     className: "hidden md:table-cell",
   },
   ...(role === "admin"
     ? [
       {
-        header: "Actions",
+        header: "Hoạt động",
         accessor: "action",
       },
     ]
     : []),
 ];
-
 
 const renderRow = (item: EventList) => (
   <tr
@@ -109,6 +109,22 @@ const EventListPage = async ({
     }
   }
 
+  // ROLE CONDITIONS
+
+  const roleConditions = {
+    teacher: { lessons: { some: { teacherId: currentUserId! } } },
+    student: { students: { some: { id: currentUserId! } } },
+    parent: { students: { some: { parentId: currentUserId! } } },
+  };
+
+  query.OR = [
+    { classId: null },
+    {
+      class: roleConditions[role as keyof typeof roleConditions] || {},
+    },
+  ];
+
+
   const [data, count] = await prisma.$transaction([
     prisma.event.findMany({
       where: query,
@@ -125,7 +141,7 @@ const EventListPage = async ({
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
       {/* TOP */}
       <div className="flex items-center justify-between">
-        <h1 className="hidden md:block text-lg font-semibold">All Events</h1>
+        <h1 className="hidden md:block text-lg font-semibold">Sự Kiện</h1>
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <TableSearch />
           <div className="flex items-center gap-4 self-end">
