@@ -5,6 +5,7 @@ import prisma from "./prisma";
 import { ClassSchema, SubjectSchema, TeacherSchema } from "./formValidationSchemas";
 import { clerkClient } from "@clerk/nextjs/server";
 
+
 type CurrentState = { success: boolean; error: boolean };
 
 export const createSubject = async (
@@ -133,12 +134,17 @@ export const deleteClass = async (
         return { success: false, error: true };
     }
 };
+
 export const createTeacher = async (
     currentState: CurrentState,
     data: TeacherSchema
 ) => {
     try {
-        const user = await clerkClient.users.createUser({
+        // SỬA: Thêm dòng này để lấy instance client
+        const client = await clerkClient();
+
+        // SỬA: Thay clerkClient.users bằng client.users
+        const user = await client.users.createUser({
             username: data.username,
             password: data.password,
             firstName: data.name,
@@ -183,7 +189,11 @@ export const updateTeacher = async (
         return { success: false, error: true };
     }
     try {
-        const user = await clerkClient.users.updateUser(data.id, {
+        // SỬA: Thêm dòng này
+        const client = await clerkClient();
+
+        // SỬA: Dùng client.users
+        const user = await client.users.updateUser(data.id, {
             username: data.username,
             ...(data.password !== "" && { password: data.password }),
             firstName: data.name,
@@ -227,7 +237,11 @@ export const deleteTeacher = async (
 ) => {
     const id = data.get("id") as string;
     try {
-        await clerkClient.users.deleteUser(id);
+        // SỬA: Thêm dòng này
+        const client = await clerkClient();
+
+        // SỬA: Dùng client.users
+        await client.users.deleteUser(id);
 
         await prisma.teacher.delete({
             where: {

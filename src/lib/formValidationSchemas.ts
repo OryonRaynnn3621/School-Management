@@ -29,11 +29,7 @@ export const teacherSchema = z.object({
         .min(8, { message: "Mật khẩu phải có ít nhất 8 ký tự!" }),
     name: z.string().min(1, { message: "Họ là bắt buộc!" }),
     surname: z.string().min(1, { message: "Tên là bắt buộc!" }),
-    email: z
-        .string()
-        .email({ message: "Email không hợp lệ!" })
-        .optional()
-        .or(z.literal("")),
+    email: z.string().email({ message: "Email không hợp lệ!" }),
     phone: z
         .string()
         .min(1, { message: "Số điện thoại là bắt buộc!" })
@@ -42,18 +38,20 @@ export const teacherSchema = z.object({
     address: z.string(),
     img: z.string().optional(),
     bloodType: z.string(),
-    birthday: z.coerce.date({ message: "Ngày sinh là bắt buộc!" }),
+    birthday: z.preprocess((val) => {
+        if (typeof val === "string" && val.trim() !== "") {
+            return new Date(val);
+        }
+        return val;
+    },
+        z.instanceof(Date, { message: "Ngày sinh là bắt buộc!" })
+            .refine((date) => !isNaN(date.getTime()), {
+                message: "Ngày sinh không hợp lệ!",
+            })
+    ),
     sex: z.enum(["MALE", "FEMALE"], { message: "Giới tính là bắt buộc!" }),
     subjects: z.array(z.string()).optional(), // subject ids
 });
-export const teacherCreateSchema = teacherSchema.extend({
-    password: z.string().min(8, { message: "Mật khẩu phải có ít nhất 8 ký tự!" }),
-});
-
-export const teacherUpdateSchema = teacherSchema.extend({
-    password: z.string().optional(),
-});
-
 export type TeacherSchema = z.infer<typeof teacherSchema>;
 
 export const studentSchema = z.object({
