@@ -4,9 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import InputField from "../InputField";
 import Image from "next/image";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useState, useTransition } from "react"; // Dùng useState thay vì useFormState
 import { teacherSchema, TeacherSchema } from "@/lib/formValidationSchemas";
-import { useFormState } from "react-dom";
 import { createTeacher, updateTeacher } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
@@ -29,32 +28,58 @@ const TeacherForm = ({
     formState: { errors },
   } = useForm<TeacherSchema>({
     resolver: zodResolver(teacherSchema),
+    defaultValues: data ? {
+      ...data,
+      // Chuyển đổi Date object thành chuỗi "YYYY-MM-DD" để input hiển thị đúng
+      birthday: data.birthday
+        ? new Date(data.birthday).toISOString().split("T")[0]
+        : undefined,
+    } : undefined
   });
 
   const [img, setImg] = useState<any>();
-
-  const [state, formAction] = useFormState(
-    type === "create" ? createTeacher : updateTeacher,
-    {
-      success: false,
-      error: false,
-    }
-  );
-
-  const onSubmit = handleSubmit((data) => {
-    console.log(data);
-    formAction({ ...data, img: img?.secure_url });
-  });
+  // SỬA: Dùng useTransition để quản lý trạng thái đang loading
+  const [isPending, startTransition] = useTransition();
 
   const router = useRouter();
 
-  useEffect(() => {
-    if (state.success) {
-      toast(`Giảng viên đã được ${type === "create" ? "thêm vào" : "cập nhật"}!`);
-      setOpen(false);
-      router.refresh();
-    }
-  }, [state, router, type, setOpen]);
+  // SỬA: Hàm xử lý submit trực tiếp, không qua useFormState
+  const onSubmit = handleSubmit((formData: TeacherSchema) => {
+    // 1. Chuẩn bị dữ liệu
+    const submittedData = {
+      ...formData,
+      // Chuyển Date thành chuỗi ISO an toàn
+      birthday: formData.birthday
+        ? new Date(formData.birthday).toISOString()
+        : undefined,
+      img: img?.secure_url || data?.img,
+    };
+
+    // 2. Bắt đầu gọi Server Action
+    startTransition(async () => {
+      // Chọn action tương ứng
+      const action = type === "create" ? createTeacher : updateTeacher;
+
+      try {
+        // Gọi trực tiếp (truyền state giả vì action yêu cầu tham số đầu tiên)
+        // @ts-ignore
+        const result = await action({ success: false, error: false }, submittedData);
+
+        // 3. Xử lý kết quả NGAY LẬP TỨC
+        if (result.success) {
+          toast.success(`Giảng viên đã được ${type === "create" ? "thêm vào" : "cập nhật"}!`);
+          setOpen(false); // Đóng modal ngay
+          router.refresh(); // Làm mới dữ liệu
+        } else {
+          // Hiện lỗi server trả về (ví dụ: trùng SĐT, User không tồn tại...)
+          toast.error(result.message || "Có lỗi xảy ra, vui lòng thử lại!");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Lỗi kết nối đến máy chủ!");
+      }
+    });
+  });
 
   const { subjects } = relatedData;
 
@@ -63,12 +88,14 @@ const TeacherForm = ({
       <h1 className="text-xl font-semibold">
         {type === "create" ? "Thêm giảng viên mới" : "Cập nhật thông tin giảng viên"}
       </h1>
+
+      {/* --- PHẦN INPUT --- */}
       <span className="text-xs text-gray-400 font-medium">
         Thông tin xác thực
       </span>
       <div className="flex justify-between flex-wrap gap-4">
         <InputField
-          label="Tên người dùng"
+          label="Tài khoản"
           name="username"
           defaultValue={data?.username}
           register={register}
@@ -81,32 +108,30 @@ const TeacherForm = ({
           register={register}
           error={errors?.email}
         />
-        {type === "create" && (
-          <InputField
-            label="Mật Khẩu"
-            name="password"
-            type="password"
-            register={register}
-            error={errors?.password}
-          />
-        )}
-
+        <InputField
+          label="Mật Khẩu"
+          name="password"
+          type="password"
+          register={register}
+          error={errors?.password}
+        />
       </div>
+
       <span className="text-xs text-gray-400 font-medium">
         Thông tin người dùng
       </span>
       <div className="flex justify-between flex-wrap gap-4">
         <InputField
-          label="Họ"
-          name="surname"
-          defaultValue={data?.surname}
+          label="Tên"
+          name="name"
+          defaultValue={data?.name}
           register={register}
           error={errors.name}
         />
         <InputField
-          label="Tên"
-          name="name"
-          defaultValue={data?.name}
+          label="Họ"
+          name="surname"
+          defaultValue={data?.surname}
           register={register}
           error={errors.surname}
         />
@@ -143,6 +168,7 @@ const TeacherForm = ({
           error={errors.birthday}
           type="date"
         />
+
         {data && (
           <InputField
             label="Id"
@@ -153,12 +179,12 @@ const TeacherForm = ({
             hidden
           />
         )}
+
         <div className="flex flex-col gap-2 w-full md:w-1/4">
           <label className="text-xs text-gray-500">Giới tính</label>
           <select
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("sex")}
-            defaultValue={data?.sex}
           >
             <option value="MALE">Nam</option>
             <option value="FEMALE">Nữ</option>
@@ -169,13 +195,13 @@ const TeacherForm = ({
             </p>
           )}
         </div>
+
         <div className="flex flex-col gap-2 w-full md:w-1/4">
           <label className="text-xs text-gray-500">Môn giảng dạy</label>
           <select
             multiple
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("subjects")}
-            defaultValue={data?.subjects}
           >
             {subjects.map((subject: { id: number; name: string }) => (
               <option value={subject.id} key={subject.id}>
@@ -189,6 +215,7 @@ const TeacherForm = ({
             </p>
           )}
         </div>
+
         <CldUploadWidget
           uploadPreset="school"
           onSuccess={(result, { widget }) => {
@@ -203,17 +230,23 @@ const TeacherForm = ({
                 onClick={() => open()}
               >
                 <Image src="/upload.png" alt="" width={28} height={28} />
-                <span>Đăng tải hình ảnh</span>
+                <span>
+                  {img ? "Đã chọn ảnh mới" : "Đăng tải hình ảnh"}
+                </span>
               </div>
             );
           }}
         </CldUploadWidget>
       </div>
-      {state.error && (
-        <span className="text-red-500">Something went wrong!</span>
-      )}
-      <button className="bg-blue-400 text-white p-2 rounded-md">
-        {type === "create" ? "Thêm giảng viên mới" : "Cập nhật thông tin giảng viên"}
+
+      <button
+        className="bg-blue-400 text-white p-2 rounded-md disabled:bg-blue-200 disabled:cursor-not-allowed"
+        disabled={isPending} // Disable nút khi đang gửi dữ liệu
+      >
+        {isPending
+          ? "Đang xử lý..."
+          : type === "create" ? "Thêm giảng viên mới" : "Cập nhật thông tin giảng viên"
+        }
       </button>
     </form>
   );

@@ -15,7 +15,7 @@ const UserCard = async ({
 
   const viMap: Record<typeof type, string> = {
     admin: "Quản trị viên",
-    teacher: "Giáo viên",
+    teacher: "Giảng viên",
     student: "Học sinh",
     parent: "Phụ huynh",
   };

@@ -5,7 +5,7 @@ import { auth } from "@clerk/nextjs/server";
 
 
 const ParentPage = async () => {
-  const { userId } = auth();
+  const { userId } = await auth();
   const currentUserId = userId;
 
   const students = await prisma.student.findMany({
@@ -22,7 +22,7 @@ const ParentPage = async () => {
           <div className="w-full xl:w-2/3" key={student.id}>
             <div className="h-full bg-white p-4 rounded-md">
               <h1 className="text-xl font-semibold">
-                Lịch học của ({student.name + " " + student.surname})
+                Lịch học của ({student.surname + " " + student.name})
               </h1>
               <BigCalendarContainer type="classId" id={student.classId} />
             </div>

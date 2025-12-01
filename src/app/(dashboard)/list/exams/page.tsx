@@ -29,27 +29,41 @@ const ExamListPage = async ({
 
   const columns = [
     {
-      header: "Subject Name",
+      header: "Tên môn học",
       accessor: "name",
     },
     {
-      header: "Class",
+      header: "Lớp kiểm tra",
       accessor: "class",
     },
     {
-      header: "Teacher",
-      accessor: "teacher",
-      className: "hidden md:table-cell",
-    },
-    {
-      header: "Date",
-      accessor: "date",
+      header: "Tiêu đề",
+      accessor: "title",
       className: "hidden md:table-cell",
     },
     ...(role === "admin" || role === "teacher"
       ? [
         {
-          header: "Actions",
+          header: "Giảng viên gác thi",
+          accessor: "teacher",
+          className: "hidden md:table-cell",
+        },
+      ]
+      : []),
+    {
+      header: "Bắt đầu",
+      accessor: "startTime",
+      className: "hidden md:table-cell",
+    },
+    {
+      header: "Kết thúc",
+      accessor: "endTime",
+      className: "hidden md:table-cell",
+    },
+    ...(role === "admin" || role === "teacher"
+      ? [
+        {
+          header: "Hoạt động",
           accessor: "action",
         },
       ]
@@ -63,11 +77,35 @@ const ExamListPage = async ({
     >
       <td className="flex items-center gap-4 p-4">{item.lesson.subject.name}</td>
       <td>{item.lesson.class.name}</td>
+      <td className="hidden md:table-cell">{item.title}</td>
+
+      {/* --- SỬA ĐOẠN NÀY: Chỉ hiển thị nếu là Admin hoặc Teacher --- */}
+      {(role === "admin" || role === "teacher") && (
+        <td className="hidden md:table-cell">
+          {item.lesson.teacher.surname + " " + item.lesson.teacher.name}
+        </td>
+      )}
+      {/* ----------------------------------------------------------- */}
+
       <td className="hidden md:table-cell">
-        {item.lesson.teacher.name + " " + item.lesson.teacher.surname}
+        {new Intl.DateTimeFormat("en-US", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }).format(new Date(item.startTime))}
       </td>
       <td className="hidden md:table-cell">
-        {new Intl.DateTimeFormat("en-US").format(item.startTime)}
+        {new Intl.DateTimeFormat("en-US", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }).format(new Date(item.endTime))}
       </td>
       <td>
         <div className="flex items-center gap-2">
@@ -166,7 +204,7 @@ const ExamListPage = async ({
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
       {/* TOP */}
       <div className="flex items-center justify-between">
-        <h1 className="hidden md:block text-lg font-semibold">All Exams</h1>
+        <h1 className="hidden md:block text-lg font-semibold">Lịch kiểm tra</h1>
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <TableSearch />
           <div className="flex items-center gap-4 self-end">

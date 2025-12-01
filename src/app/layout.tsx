@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <html lang="en">
         <body className={inter.className}>
           {children}
-          <ToastContainer position="bottom-right" theme="dark" />
+          <ToastContainer position="bottom-right" theme="dark" style={{ zIndex: 999999 }} />
         </body>
       </html>
     </ClerkProvider>
