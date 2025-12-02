@@ -22,32 +22,32 @@ const EventListPage = async ({
 
   const columns = [
     {
-      header: "Title",
+      header: "Tiêu đề",
       accessor: "title",
     },
     {
-      header: "Class",
+      header: "Lớp học",
       accessor: "class",
     },
     {
-      header: "Date",
+      header: "Ngày",
       accessor: "date",
       className: "hidden md:table-cell",
     },
     {
-      header: "Start Time",
+      header: "Bắt đầu",
       accessor: "startTime",
       className: "hidden md:table-cell",
     },
     {
-      header: "End Time",
+      header: "Kết thúc",
       accessor: "endTime",
       className: "hidden md:table-cell",
     },
     ...(role === "admin"
       ? [
         {
-          header: "Actions",
+          header: "Tùy chọn",
           accessor: "action",
         },
       ]
@@ -121,12 +121,21 @@ const EventListPage = async ({
     parent: { students: { some: { parentId: currentUserId! } } },
   };
 
-  query.OR = [
-    { classId: null },
-    {
-      class: roleConditions[role as keyof typeof roleConditions] || {},
-    },
-  ];
+  // SỬA: Chỉ áp dụng bộ lọc nếu KHÔNG PHẢI là admin
+  if (role !== "admin") {
+    const roleCondition = roleConditions[role as keyof typeof roleConditions];
+
+    if (roleCondition) {
+      query.OR = [
+        { classId: null }, // Sự kiện chung cho toàn trường
+        { class: roleCondition }, // Sự kiện riêng của lớp liên quan
+      ];
+    } else {
+      // Nếu không phải admin và cũng không thuộc các role trên -> Chỉ xem sự kiện chung
+      query.OR = [{ classId: null }];
+    }
+  }
+  // Nếu là ADMIN -> Không gán query.OR -> Prisma lấy tất cả dữ liệu.
 
   const [data, count] = await prisma.$transaction([
     prisma.event.findMany({
@@ -144,16 +153,16 @@ const EventListPage = async ({
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
       {/* TOP */}
       <div className="flex items-center justify-between">
-        <h1 className="hidden md:block text-lg font-semibold">All Events</h1>
+        <h1 className="hidden md:block text-lg font-semibold">Sự kiện</h1>
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <TableSearch />
           <div className="flex items-center gap-4 self-end">
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
+            {/* <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               <Image src="/filter.png" alt="" width={14} height={14} />
             </button>
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               <Image src="/sort.png" alt="" width={14} height={14} />
-            </button>
+            </button> */}
             {role === "admin" && <FormContainer table="event" type="create" />}
           </div>
         </div>

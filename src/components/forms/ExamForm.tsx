@@ -97,7 +97,7 @@ const ExamForm = ({
 
                 {/* Lesson (Chiếm 48% chiều rộng) */}
                 <div className="flex flex-col gap-2 w-full md:w-[48%]">
-                    <label className="text-xs text-gray-500">Bài học (Lesson)</label>
+                    <label className="text-xs text-gray-500">Khóa học</label>
                     <select
                         className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
                         {...register("lessonId")}

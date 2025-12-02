@@ -25,6 +25,9 @@ const SingleTeacherPage = async ({
     | null = await prisma.teacher.findUnique({
       where: { id },
       include: {
+        // --- SỬA Ở ĐÂY: Thêm dòng này để lấy danh sách môn học ---
+        subjects: true,
+        // ---------------------------------------------------------
         _count: {
           select: {
             subjects: true,

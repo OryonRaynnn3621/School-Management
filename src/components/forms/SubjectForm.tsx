@@ -108,7 +108,7 @@ const SubjectForm = ({
                                     htmlFor={`teacher-${teacher.id}`}
                                     className="text-sm text-gray-700 cursor-pointer w-full select-none"
                                 >
-                                    {teacher.name} {teacher.surname}
+                                    {teacher.surname} {teacher.name}
                                 </label>
                             </div>
                         ))}

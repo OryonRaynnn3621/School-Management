@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "./prisma";
-import { ClassSchema, ExamSchema, ParentSchema, StudentSchema, SubjectSchema, TeacherSchema } from "./formValidationSchemas";
+import { AnnouncementSchema, ClassSchema, EventSchema, ExamSchema, ParentSchema, StudentSchema, SubjectSchema, TeacherSchema } from "./formValidationSchemas";
 import { clerkClient } from "@clerk/nextjs/server";
 
 
@@ -162,7 +162,7 @@ export const createTeacher = async (
                 phone: data.phone || null,
                 address: data.address,
                 img: data.img || null,
-                bloodType: data.bloodType,
+                bloodType: data.bloodType || "",
                 sex: data.sex,
                 birthday: new Date(data.birthday), // Đảm bảo chuyển đổi Date
                 subjects: {
@@ -194,27 +194,20 @@ export const createTeacher = async (
 };
 // actions.ts
 
+// ... (phần imports và createTeacher giữ nguyên)
+
 export const updateTeacher = async (
     currentState: CurrentState,
-    data: any // SỬA QUAN TRỌNG: Đổi thành 'any' để nhận chuỗi ngày sinh từ Client
+    data: any
 ) => {
-    // 1. Kiểm tra ID bắt buộc
     if (!data.id) {
         return { success: false, error: true, message: "Không tìm thấy ID giáo viên!" };
     }
 
     try {
-        // Log dữ liệu nhận được để debug (có thể xóa sau khi chạy ổn)
-        console.log("UPDATE TEACHER DATA RECEIVED:", {
-            id: data.id,
-            birthdayType: typeof data.birthday,
-            birthdayValue: data.birthday
-        });
-
         const client = await clerkClient();
 
-        // 2. Cập nhật Clerk (Username, Password, Name)
-        // Lưu ý: Chỉ update password nếu người dùng có nhập
+        // 1. Cập nhật Clerk
         await client.users.updateUser(data.id, {
             username: data.username,
             ...(data.password !== "" && { password: data.password }),
@@ -222,15 +215,13 @@ export const updateTeacher = async (
             lastName: data.surname,
         });
 
-        // 3. Xử lý dữ liệu an toàn trước khi lưu vào Prisma
-
-        // Chuyển đổi ngày sinh từ Chuỗi/Date sang Date Object chuẩn cho Prisma
+        // 2. Xử lý ngày sinh an toàn
         const birthDate = new Date(data.birthday);
         if (isNaN(birthDate.getTime())) {
             return { success: false, error: true, message: "Ngày sinh không hợp lệ!" };
         }
 
-        // 4. Cập nhật Prisma
+        // 3. Cập nhật Prisma
         await prisma.teacher.update({
             where: {
                 id: data.id,
@@ -243,60 +234,29 @@ export const updateTeacher = async (
                 phone: data.phone || null,
                 address: data.address,
                 img: data.img || null,
-                bloodType: data.bloodType,
+                bloodType: data.bloodType || "",
                 sex: data.sex,
-
-                // Dùng biến birthDate đã xử lý ở trên
                 birthday: birthDate,
 
-                // Xử lý Môn học (Many-to-Many)
-                subjects: data.subjects ? {
-                    set: data.subjects.map((subjectId: string) => ({
+                // SỬA: Logic cập nhật môn học an toàn hơn
+                // Luôn cập nhật lại danh sách môn học (xóa cũ, thêm mới bằng 'set')
+                subjects: {
+                    set: data.subjects?.map((subjectId: string) => ({
                         id: parseInt(subjectId),
-                    })),
-                } : undefined,
+                    })) || [], // Nếu không có môn nào (dù schema đã bắt buộc), trả về mảng rỗng để tránh lỗi crash
+                },
             },
         });
 
-        // 5. Làm mới cache
         revalidatePath("/list/teachers");
-
-        console.log("UPDATE TEACHER SUCCESS"); // Báo hiệu server đã chạy xong
-
         return { success: true, error: false, message: "Cập nhật thành công!" };
 
     } catch (err: any) {
         console.log("UPDATE TEACHER ERROR:", JSON.stringify(err, null, 2));
 
-        // --- XỬ LÝ CÁC LỖI THƯỜNG GẶP ---
+        // ... (các đoạn bắt lỗi khác giữ nguyên)
+        if (err.code === "P2025") return { success: false, error: true, message: "Không tìm thấy giáo viên!" };
 
-        // 1. Lỗi Prisma: Không tìm thấy bản ghi (P2025)
-        if (err.code === "P2025") {
-            return { success: false, error: true, message: "Không tìm thấy giáo viên trong hệ thống!" };
-        }
-
-        // 2. Lỗi Prisma: Trùng lặp dữ liệu (P2002)
-        if (err.code === "P2002") {
-            const target = err.meta?.target;
-            if (Array.isArray(target)) {
-                if (target.includes("phone")) return { success: false, error: true, message: "Số điện thoại đã được sử dụng!" };
-                if (target.includes("email")) return { success: false, error: true, message: "Email đã được sử dụng!" };
-                if (target.includes("username")) return { success: false, error: true, message: "Tên đăng nhập đã tồn tại!" };
-            }
-            return { success: false, error: true, message: "Dữ liệu bị trùng lặp!" };
-        }
-
-        // 3. Lỗi Clerk: Trùng Username/Email
-        if (err?.errors?.[0]?.code === 'form_identifier_exists') {
-            return { success: false, error: true, message: "Username hoặc Email đã tồn tại trên hệ thống (Clerk)!" };
-        }
-
-        // 4. Lỗi Clerk: Mật khẩu yếu
-        if (err?.errors?.[0]?.code === 'form_password_pwned') {
-            return { success: false, error: true, message: "Mật khẩu quá yếu hoặc đã bị lộ, vui lòng chọn mật khẩu khác!" };
-        }
-
-        // Lỗi khác chưa xác định
         return { success: false, error: true, message: err.message || "Đã có lỗi xảy ra!" };
     }
 };
@@ -325,14 +285,6 @@ export const deleteTeacher = async (
         return { success: false, error: true, message: "Không thể xóa giáo viên này!" };
     }
 };
-
-// src/lib/actions.ts
-
-// ... (Các phần trên giữ nguyên)
-
-// --- STUDENT ACTIONS ---
-
-// src/lib/actions.ts
 
 export const createStudent = async (
     currentState: CurrentState,
@@ -585,10 +537,7 @@ export const deleteExam = async (
     }
 };
 
-// ... imports including ParentSchema
-
 // --- PARENT ACTIONS ---
-
 export const createParent = async (
     currentState: CurrentState,
     data: ParentSchema
@@ -696,5 +645,143 @@ export const deleteParent = async (
     } catch (err) {
         console.log("DELETE PARENT ERROR:", err);
         return { success: false, error: true, message: "Không thể xóa phụ huynh này (có thể do ràng buộc dữ liệu)!" };
+    }
+};
+
+// --- ANNOUNCEMENT ACTIONS ---
+export const createAnnouncement = async (
+    currentState: CurrentState,
+    data: AnnouncementSchema
+) => {
+    try {
+        await prisma.announcement.create({
+            data: {
+                title: data.title,
+                description: data.description,
+                date: data.date,
+                classId: data.classId || null,
+            },
+        });
+
+        // revalidatePath("/list/announcements");
+        return { success: true, error: false, message: "Tạo thông báo thành công!" };
+    } catch (err) {
+        console.log("CREATE ANNOUNCEMENT ERROR:", err);
+        return { success: false, error: true, message: "Đã có lỗi xảy ra!" };
+    }
+};
+
+export const updateAnnouncement = async (
+    currentState: CurrentState,
+    data: AnnouncementSchema
+) => {
+    try {
+        await prisma.announcement.update({
+            where: {
+                id: data.id,
+            },
+            data: {
+                title: data.title,
+                description: data.description,
+                date: data.date,
+                classId: data.classId || null,
+            },
+        });
+
+        // revalidatePath("/list/announcements");
+        return { success: true, error: false, message: "Cập nhật thành công!" };
+    } catch (err) {
+        console.log("UPDATE ANNOUNCEMENT ERROR:", err);
+        return { success: false, error: true, message: "Đã có lỗi xảy ra!" };
+    }
+};
+
+export const deleteAnnouncement = async (
+    currentState: CurrentState,
+    data: FormData
+) => {
+    const id = data.get("id") as string;
+    try {
+        await prisma.announcement.delete({
+            where: {
+                id: parseInt(id),
+            },
+        });
+
+        // revalidatePath("/list/announcements");
+        return { success: true, error: false, message: "Xóa thông báo thành công!" };
+    } catch (err) {
+        console.log("DELETE ANNOUNCEMENT ERROR:", err);
+        return { success: false, error: true, message: "Không thể xóa thông báo này!" };
+    }
+};
+
+// --- EVENT ACTIONS ---
+export const createEvent = async (
+    currentState: CurrentState,
+    data: EventSchema
+) => {
+    try {
+        await prisma.event.create({
+            data: {
+                title: data.title,
+                description: data.description || "",
+                startTime: data.startTime,
+                endTime: data.endTime,
+                classId: data.classId || null,
+            },
+        });
+
+        // revalidatePath("/list/events");
+        return { success: true, error: false, message: "Tạo sự kiện thành công!" };
+    } catch (err) {
+        console.log("CREATE EVENT ERROR:", err);
+        return { success: false, error: true, message: "Đã có lỗi xảy ra!" };
+    }
+};
+
+export const updateEvent = async (
+    currentState: CurrentState,
+    data: EventSchema
+) => {
+    try {
+        await prisma.event.update({
+            where: {
+                id: data.id,
+            },
+            data: {
+                title: data.title,
+                description: data.description || "",
+                startTime: data.startTime,
+                endTime: data.endTime,
+                classId: data.classId || null,
+            },
+        });
+
+        // revalidatePath("/list/events");
+        return { success: true, error: false, message: "Cập nhật thành công!" };
+    } catch (err) {
+        console.log("UPDATE EVENT ERROR:", err);
+        return { success: false, error: true, message: "Đã có lỗi xảy ra!" };
+    }
+};
+
+export const deleteEvent = async (
+    currentState: CurrentState,
+    data: FormData
+) => {
+    const id = data.get("id") as string;
+    try {
+        await prisma.event.delete({
+            where: {
+                id: parseInt(id),
+            },
+        });
+
+        // revalidatePath("/list/events");
+        return { success: true, error: false, message: "Xóa sự kiện thành công!" };
+    } catch (err) {
+        console.log("DELETE EVENT ERROR:", err);
+        return { success: false, error: true, message: "Không thể xóa sự kiện này!" };
     }
 };

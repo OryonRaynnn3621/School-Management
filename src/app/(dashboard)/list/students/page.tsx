@@ -49,7 +49,7 @@ const StudentListPage = async ({
     ...(role === "admin"
       ? [
         {
-          header: "Hoạt động",
+          header: "Tùy chọn",
           accessor: "action",
         },
       ]

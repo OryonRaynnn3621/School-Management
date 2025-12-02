@@ -22,22 +22,22 @@ const AnnouncementListPage = async ({
 
   const columns = [
     {
-      header: "Title",
+      header: "Tiêu đề",
       accessor: "title",
     },
     {
-      header: "Class",
+      header: "Lớp học",
       accessor: "class",
     },
     {
-      header: "Date",
+      header: "Ngày",
       accessor: "date",
       className: "hidden md:table-cell",
     },
     ...(role === "admin"
       ? [
         {
-          header: "Actions",
+          header: "Tùy chọn",
           accessor: "action",
         },
       ]
@@ -96,12 +96,21 @@ const AnnouncementListPage = async ({
     parent: { students: { some: { parentId: currentUserId! } } },
   };
 
-  query.OR = [
-    { classId: null },
-    {
-      class: roleConditions[role as keyof typeof roleConditions] || {},
-    },
-  ];
+  // SỬA: Chỉ áp dụng bộ lọc nếu KHÔNG PHẢI là admin
+  if (role !== "admin") {
+    const roleCondition = roleConditions[role as keyof typeof roleConditions];
+
+    if (roleCondition) {
+      query.OR = [
+        { classId: null }, // Thông báo chung
+        { class: roleCondition }, // Thông báo riêng cho lớp của user
+      ];
+    } else {
+      // Nếu là role lạ (không phải admin/teacher/student/parent) thì chỉ xem được thông báo chung
+      query.OR = [{ classId: null }];
+    }
+  }
+  // Nếu là ADMIN, query.OR sẽ không được set -> Prisma sẽ lấy tất cả dữ liệu.
 
   const [data, count] = await prisma.$transaction([
     prisma.announcement.findMany({
@@ -120,17 +129,17 @@ const AnnouncementListPage = async ({
       {/* TOP */}
       <div className="flex items-center justify-between">
         <h1 className="hidden md:block text-lg font-semibold">
-          All Announcements
+          Thông báo
         </h1>
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <TableSearch />
           <div className="flex items-center gap-4 self-end">
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
+            {/* <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               <Image src="/filter.png" alt="" width={14} height={14} />
             </button>
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               <Image src="/sort.png" alt="" width={14} height={14} />
-            </button>
+            </button> */}
             {role === "admin" && (
               <FormContainer table="announcement" type="create" />
             )}

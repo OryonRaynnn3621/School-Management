@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+//Subjects
 export const subjectSchema = z.object({
     id: z.coerce.number().optional(),
     name: z.string().min(1, { message: "Tên môn học là bắt buộc!" }),
@@ -8,6 +9,7 @@ export const subjectSchema = z.object({
 
 export type SubjectSchema = z.infer<typeof subjectSchema>;
 
+//Classes
 export const classSchema = z.object({
     id: z.coerce.number().optional(),
     name: z.string().min(1, { message: "Tên lớp là bắt buộc!" }),
@@ -18,6 +20,7 @@ export const classSchema = z.object({
 
 export type ClassSchema = z.infer<typeof classSchema>;
 
+//Teachers
 export const teacherSchema = z.object({
     id: z.string().optional(),
     username: z
@@ -43,7 +46,7 @@ export const teacherSchema = z.object({
 
     address: z.string(),
     img: z.string().optional().nullable(),
-    bloodType: z.string(),
+    bloodType: z.string().optional().or(z.literal("")),
     birthday: z.preprocess((val) => {
         if (typeof val === "string" && val.trim() !== "") {
             return new Date(val);
@@ -56,10 +59,11 @@ export const teacherSchema = z.object({
             })
     ),
     sex: z.enum(["MALE", "FEMALE"], { message: "Giới tính là bắt buộc!" }),
-    subjects: z.array(z.string()).optional(), // subject ids
+    subjects: z.array(z.string()).min(1, { message: "Vui lòng chọn ít nhất 1 môn giảng dạy!" }), // subject ids
 });
 export type TeacherSchema = z.infer<typeof teacherSchema>;
 
+//Students
 export const studentSchema = z.object({
     id: z.string().optional(),
     username: z
@@ -104,6 +108,8 @@ export const studentSchema = z.object({
 
 export type StudentSchema = z.infer<typeof studentSchema>;
 
+
+//Exams
 export const examSchema = z.object({
     id: z.coerce.number().optional(),
     title: z.string().min(1, { message: "Tên bài kiểm tra là bắt buộc!" }),
@@ -120,8 +126,7 @@ export const examSchema = z.object({
 
 export type ExamSchema = z.infer<typeof examSchema>;
 
-// ... existing schemas
-
+//Parents
 export const parentSchema = z.object({
     id: z.string().optional(),
     username: z
@@ -147,3 +152,30 @@ export const parentSchema = z.object({
 });
 
 export type ParentSchema = z.infer<typeof parentSchema>;
+
+//Announcement
+export const announcementSchema = z.object({
+    id: z.coerce.number().optional(),
+    title: z.string().min(1, { message: "Tiêu đề là bắt buộc!" }),
+    description: z.string().min(1, { message: "Nội dung là bắt buộc!" }),
+    date: z.coerce.date({ message: "Ngày không hợp lệ!" }),
+    classId: z.coerce.number().optional().or(z.literal("")),
+});
+
+export type AnnouncementSchema = z.infer<typeof announcementSchema>;
+
+//Events
+export const eventSchema = z.object({
+    id: z.coerce.number().optional(),
+    title: z.string().min(1, { message: "Tiêu đề là bắt buộc!" }),
+    description: z.string().optional(),
+    startTime: z.coerce.date({ message: "Thời gian bắt đầu không hợp lệ!" }),
+    endTime: z.coerce.date({ message: "Thời gian kết thúc không hợp lệ!" }),
+    classId: z.coerce.number().optional().or(z.literal("")),
+})
+    .refine((data) => data.startTime < data.endTime, {
+        message: "Thời gian kết thúc phải sau thời gian bắt đầu!",
+        path: ["endTime"],
+    });
+
+export type EventSchema = z.infer<typeof eventSchema>;

@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import InputField from "../InputField";
 import Image from "next/image";
-import { Dispatch, SetStateAction, useState, useTransition } from "react";
+import { Dispatch, SetStateAction, useEffect, useState, useTransition } from "react";
 import { studentSchema, StudentSchema } from "@/lib/formValidationSchemas";
 import { createStudent, updateStudent } from "@/lib/actions";
 import { useRouter } from "next/navigation";
@@ -25,36 +25,44 @@ const StudentForm = ({
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<StudentSchema>({
     resolver: zodResolver(studentSchema),
-    // 1. Load dữ liệu cũ vào form và format ngày tháng
-    defaultValues: data ? {
-      ...data,
-      birthday: data.birthday
-        ? new Date(data.birthday).toISOString().split("T")[0]
-        : undefined,
-    } : undefined
+    defaultValues: {
+      sex: "MALE",
+      bloodType: "",
+    }
   });
 
   const [img, setImg] = useState<any>();
-  // 2. Dùng useTransition thay vì useFormState
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  const onSubmit = handleSubmit((formData) => {
-    // 1. Logic xử lý ảnh: Nếu có ảnh mới (img state) thì lấy, 
-    // nếu không thì lấy ảnh cũ từ database (data?.img)
-    const finalImg = img?.secure_url || data?.img;
+  // --- SỬA Ở ĐÂY: Dùng useEffect để nạp dữ liệu cũ ---
+  useEffect(() => {
+    if (type === "update" && data) {
+      reset({
+        ...data,
+        birthday: data.birthday
+          ? new Date(data.birthday).toISOString().split("T")[0]
+          : undefined,
+        // QUAN TRỌNG: Ép kiểu classId thành chuỗi (String) để khớp với ô Radio
+        classId: data.classId ? String(data.classId) : undefined,
+      });
+      // Set ảnh cũ nếu có để hiển thị preview (tuỳ chọn)
+      // setImg(data.img);
+    }
+  }, [data, type, reset]);
+  // ------------------------------------------------
 
+  const onSubmit = handleSubmit((formData) => {
     const submittedData = {
       ...formData,
-      // Chuyển Date thành chuỗi
       birthday: formData.birthday
         ? new Date(formData.birthday).toISOString()
         : undefined,
-      // Gán ảnh đã xử lý vào
-      img: finalImg,
+      img: img?.secure_url || data?.img,
     };
 
     startTransition(async () => {
@@ -76,7 +84,7 @@ const StudentForm = ({
     });
   });
 
-  const { grades, classes } = relatedData;
+  const { grades, classes, parents } = relatedData;
 
   return (
     <form className="flex flex-col gap-8" onSubmit={onSubmit}>
@@ -84,9 +92,12 @@ const StudentForm = ({
         {type === "create" ? "Tạo học viên mới" : "Cập nhật học viên"}
       </h1>
 
-      <span className="text-xs text-gray-400 font-medium">
+      {/* --- PHẦN 1: THÔNG TIN XÁC THỰC --- */}
+
+      <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
         Thông tin xác thực
       </span>
+
       <div className="flex justify-between flex-wrap gap-4">
         <InputField
           label="Tài khoản"
@@ -112,32 +123,12 @@ const StudentForm = ({
         />
       </div>
 
-      <span className="text-xs text-gray-400 font-medium">
-        Thông tin người dùng
-      </span>
 
-      {/* Upload Ảnh */}
-      <CldUploadWidget
-        uploadPreset="school"
-        onSuccess={(result, { widget }) => {
-          setImg(result.info);
-          widget.close();
-        }}
-      >
-        {({ open }) => {
-          return (
-            <div
-              className="text-xs text-gray-500 flex items-center gap-2 cursor-pointer"
-              onClick={() => open()}
-            >
-              <Image src="/upload.png" alt="" width={28} height={28} />
-              <span>
-                {img ? "Đã chọn ảnh mới" : "Đăng tải hình ảnh"}
-              </span>
-            </div>
-          );
-        }}
-      </CldUploadWidget>
+      {/* --- PHẦN 2: THÔNG TIN CÁ NHÂN (Đầy đủ các trường) --- */}
+
+      <span className="text-xs text-gray-400 font-medium">
+        Thông tin cá nhân
+      </span>
 
       <div className="flex justify-between flex-wrap gap-4">
         <InputField
@@ -243,33 +234,86 @@ const StudentForm = ({
             </p>
           )}
         </div>
+      </div>
 
-        <div className="flex flex-col gap-2 w-full md:w-1/4">
+
+      {/* --- PHẦN 3: LỚP HỌC & UPLOAD ẢNH --- */}
+
+      <div className="flex w-full gap-4 flex-col md:flex-row">
+
+        {/* Chọn Lớp Học */}
+        <div className="flex flex-col gap-2 w-full md:w-1/2">
           <label className="text-xs text-gray-500">Lớp học</label>
-          <select
-            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
-            {...register("classId")}
-          >
-            {classes.map(
-              (classItem: {
-                id: number;
-                name: string;
-                capacity: number;
-                _count: { students: number };
-              }) => (
-                <option value={classItem.id} key={classItem.id}>
-                  (Lớp {classItem.name} -{" "} Sỉ số {" "}
-                  {classItem._count.students + "/" + classItem.capacity}
-                  )
-                </option>
-              )
-            )}
-          </select>
+
+          <div className="border border-gray-300 rounded-md p-4 h-40 overflow-y-auto grid grid-cols-2 gap-2 bg-white">
+            {classes.map((classItem: { id: number; name: string; capacity: number; _count: { students: number } }) => (
+              <div key={classItem.id} className="relative flex items-center">
+                <input
+                  type="radio"
+                  id={`class-${classItem.id}`}
+                  // SỬA Ở ĐÂY: Ép kiểu ID thành chuỗi để so sánh chính xác với classId trong reset()
+                  value={String(classItem.id)}
+                  {...register("classId")}
+                  className="peer hidden"
+                />
+                <label
+                  htmlFor={`class-${classItem.id}`}
+                  className="w-full text-center text-xs font-medium p-2 border border-gray-200 rounded-md cursor-pointer transition-all 
+                             hover:bg-gray-50 
+                             peer-checked:bg-blue-100 peer-checked:border-blue-500 peer-checked:text-blue-700"
+                >
+                  {classItem.name} ({classItem._count.students}/{classItem.capacity})
+                </label>
+              </div>
+            ))}
+          </div>
+
           {errors.classId?.message && (
-            <p className="text-xs text-red-400">
-              {errors.classId.message.toString()}
-            </p>
+            <p className="text-xs text-red-400">{errors.classId.message.toString()}</p>
           )}
+          <p className="text-[10px] text-gray-400">
+            * Chọn lớp học cho học viên.
+          </p>
+        </div>
+
+        {/* Upload Ảnh */}
+        <div className="flex flex-col gap-2 w-full md:w-1/2">
+          <label className="text-xs text-gray-500 opacity-0 md:opacity-100">Ảnh đại diện</label>
+
+          <CldUploadWidget
+            uploadPreset="school"
+            onSuccess={(result, { widget }) => {
+              setImg(result.info);
+              widget.close();
+            }}
+          >
+            {({ open }) => {
+              return (
+                <div
+                  className="w-full h-40 border-2 border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 hover:border-blue-400 transition-colors"
+                  onClick={() => open()}
+                >
+                  {img ? (
+                    <>
+                      <Image src="/upload.png" alt="" width={28} height={28} className="mb-2" />
+                      <span className="text-xs text-green-600 font-semibold">✅ Đã chọn ảnh mới</span>
+                    </>
+                  ) : data?.img ? (
+                    <>
+                      <Image src={data.img} alt="Current" width={40} height={40} className="rounded-full mb-2 object-cover" />
+                      <span className="text-xs text-blue-600 font-semibold">🖼️ Giữ ảnh hiện tại</span>
+                      <span className="text-[10px] text-gray-400 mt-1">(Nhấp để thay đổi)</span>
+                    </>
+                  ) : (
+                    <>
+                      <Image src="/upload.png" alt="" width={28} height={28} className="mb-2 opacity-60" />
+                      <span className="text-xs text-gray-500 font-medium">Nhấp để tải ảnh đại diện</span>
+                    </>
+                  )}
+                </div>
+              );
+            }}
+          </CldUploadWidget>
         </div>
       </div>
 

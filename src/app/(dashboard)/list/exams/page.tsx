@@ -63,7 +63,7 @@ const ExamListPage = async ({
     ...(role === "admin" || role === "teacher"
       ? [
         {
-          header: "Hoạt động",
+          header: "Tùy chọn",
           accessor: "action",
         },
       ]

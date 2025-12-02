@@ -23,28 +23,28 @@ const ParentListPage = async ({
 
   const columns = [
     {
-      header: "Info",
+      header: "Thông tin",
       accessor: "info",
     },
     {
-      header: "Student Names",
+      header: "Tên học viên",
       accessor: "students",
       className: "hidden md:table-cell",
     },
     {
-      header: "Phone",
+      header: "Số điện thoại",
       accessor: "phone",
       className: "hidden lg:table-cell",
     },
     {
-      header: "Address",
+      header: "Địa chỉ",
       accessor: "address",
       className: "hidden lg:table-cell",
     },
     ...(role === "admin"
       ? [
         {
-          header: "Actions",
+          header: "Tùy chọn",
           accessor: "action",
         },
       ]

@@ -104,7 +104,7 @@ const ClassForm = ({
 
                     {/* Hàng 2: Khối lớp (Full chiều rộng cột trái) */}
                     <div className="flex flex-col gap-2 w-full">
-                        <label className="text-xs text-gray-500">Khối / Cấp bậc</label>
+                        <label className="text-xs text-gray-500">Cấp bậc</label>
                         <select
                             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
                             {...register("gradeId")}
@@ -112,7 +112,7 @@ const ClassForm = ({
                         >
                             {grades.map((grade: { id: number; level: number }) => (
                                 <option value={grade.id} key={grade.id}>
-                                    Khối {grade.level}
+                                    {grade.level}
                                 </option>
                             ))}
                         </select>
@@ -164,10 +164,10 @@ const ClassForm = ({
                                     className="flex items-center gap-3 p-2 rounded-md cursor-pointer transition-all border border-transparent hover:border-blue-200 hover:bg-blue-50 peer-checked:bg-blue-100 peer-checked:border-blue-500 peer-checked:text-blue-700"
                                 >
                                     <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center text-blue-600 font-bold text-xs">
-                                        {teacher.name[0]}{teacher.surname[0]}
+                                        {teacher.surname[0]}{teacher.name[0]}
                                     </div>
                                     <span className="text-sm font-medium">
-                                        {teacher.name} {teacher.surname}
+                                        {teacher.surname} {teacher.name}
                                     </span>
                                 </label>
                             </div>
