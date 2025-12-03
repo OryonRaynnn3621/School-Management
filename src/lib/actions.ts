@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "./prisma";
-import { AnnouncementSchema, ClassSchema, EventSchema, ExamSchema, ParentSchema, StudentSchema, SubjectSchema, TeacherSchema } from "./formValidationSchemas";
+import { AnnouncementSchema, AssignmentSchema, ClassSchema, EventSchema, ExamSchema, ParentSchema, ResultSchema, StudentSchema, SubjectSchema, TeacherSchema } from "./formValidationSchemas";
 import { clerkClient } from "@clerk/nextjs/server";
 
 
@@ -783,5 +783,141 @@ export const deleteEvent = async (
     } catch (err) {
         console.log("DELETE EVENT ERROR:", err);
         return { success: false, error: true, message: "Không thể xóa sự kiện này!" };
+    }
+};
+
+// --- ASSIGNMENT ACTIONS ---
+export const createAssignment = async (
+    currentState: CurrentState,
+    data: AssignmentSchema
+) => {
+    try {
+        await prisma.assignment.create({
+            data: {
+                title: data.title,
+                startDate: data.startDate,
+                dueDate: data.dueDate,
+                lessonId: data.lessonId,
+            },
+        });
+
+        // revalidatePath("/list/assignments");
+        return { success: true, error: false, message: "Tạo bài tập thành công!" };
+    } catch (err) {
+        console.log("CREATE ASSIGNMENT ERROR:", err);
+        return { success: false, error: true, message: "Đã có lỗi xảy ra!" };
+    }
+};
+
+export const updateAssignment = async (
+    currentState: CurrentState,
+    data: AssignmentSchema
+) => {
+    try {
+        await prisma.assignment.update({
+            where: {
+                id: data.id,
+            },
+            data: {
+                title: data.title,
+                startDate: data.startDate,
+                dueDate: data.dueDate,
+                lessonId: data.lessonId,
+            },
+        });
+
+        // revalidatePath("/list/assignments");
+        return { success: true, error: false, message: "Cập nhật thành công!" };
+    } catch (err) {
+        console.log("UPDATE ASSIGNMENT ERROR:", err);
+        return { success: false, error: true, message: "Đã có lỗi xảy ra!" };
+    }
+};
+
+export const deleteAssignment = async (
+    currentState: CurrentState,
+    data: FormData
+) => {
+    const id = data.get("id") as string;
+    try {
+        await prisma.assignment.delete({
+            where: {
+                id: parseInt(id),
+            },
+        });
+
+        // revalidatePath("/list/assignments");
+        return { success: true, error: false, message: "Xóa bài tập thành công!" };
+    } catch (err) {
+        console.log("DELETE ASSIGNMENT ERROR:", err);
+        return { success: false, error: true, message: "Không thể xóa bài tập này!" };
+    }
+};
+
+// --- RESULT ACTIONS ---
+export const createResult = async (
+    currentState: CurrentState,
+    data: ResultSchema
+) => {
+    try {
+        await prisma.result.create({
+            data: {
+                studentId: data.studentId,
+                score: data.score,
+                examId: data.examId || null,
+                assignmentId: data.assignmentId || null,
+            },
+        });
+
+        // revalidatePath("/list/results");
+        return { success: true, error: false, message: "Tạo kết quả thành công!" };
+    } catch (err) {
+        console.log("CREATE RESULT ERROR:", err);
+        return { success: false, error: true, message: "Đã có lỗi xảy ra!" };
+    }
+};
+
+export const updateResult = async (
+    currentState: CurrentState,
+    data: ResultSchema
+) => {
+    try {
+        await prisma.result.update({
+            where: {
+                id: data.id,
+            },
+            data: {
+                studentId: data.studentId,
+                score: data.score,
+                examId: data.examId || null,
+                assignmentId: data.assignmentId || null,
+            },
+        });
+
+        // revalidatePath("/list/results");
+        return { success: true, error: false, message: "Cập nhật thành công!" };
+    } catch (err) {
+        console.log("UPDATE RESULT ERROR:", err);
+        return { success: false, error: true, message: "Đã có lỗi xảy ra!" };
+    }
+};
+
+export const deleteResult = async (
+    currentState: CurrentState,
+    data: FormData
+) => {
+    const id = data.get("id") as string;
+    try {
+        await prisma.result.delete({
+            where: {
+                id: parseInt(id),
+            },
+        });
+
+        // revalidatePath("/list/results");
+        return { success: true, error: false, message: "Xóa kết quả thành công!" };
+    } catch (err) {
+        console.log("DELETE RESULT ERROR:", err);
+        return { success: false, error: true, message: "Không thể xóa kết quả này!" };
     }
 };

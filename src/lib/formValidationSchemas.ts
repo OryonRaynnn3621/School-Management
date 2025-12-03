@@ -179,3 +179,29 @@ export const eventSchema = z.object({
     });
 
 export type EventSchema = z.infer<typeof eventSchema>;
+
+// Assignments
+export const assignmentSchema = z.object({
+    id: z.coerce.number().optional(),
+    lessonId: z.coerce.number({ message: "Vui lòng chọn bài học!" }),
+    title: z.string().min(1, { message: "Tiêu đề là bắt buộc!" }),
+    startDate: z.coerce.date({ message: "Ngày bắt đầu không hợp lệ!" }),
+    dueDate: z.coerce.date({ message: "Hạn nộp không hợp lệ!" }),
+}).refine((data) => data.startDate < data.dueDate, {
+    message: "Hạn nộp phải sau ngày bắt đầu!",
+    path: ["dueDate"],
+});
+
+export type AssignmentSchema = z.infer<typeof assignmentSchema>;
+
+// Results
+export const resultSchema = z.object({
+    id: z.coerce.number().optional(),
+    studentId: z.string().min(1, { message: "Vui lòng chọn học sinh!" }),
+    score: z.coerce.number().min(0, { message: "Điểm số không hợp lệ!" }).max(100, { message: "Điểm tối đa là 100!" }),
+    // Dùng .or() để cho phép 1 trong 2 trường có dữ liệu, trường kia null
+    examId: z.coerce.number().optional().nullable(),
+    assignmentId: z.coerce.number().optional().nullable(),
+});
+
+export type ResultSchema = z.infer<typeof resultSchema>;

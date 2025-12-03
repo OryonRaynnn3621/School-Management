@@ -19,6 +19,7 @@ type ResultList = {
   score: number;
   className: string;
   startTime: Date;
+
 };
 
 
@@ -202,6 +203,9 @@ const ResultListPage = async ({
       score: item.score,
       className: assessment.lesson.class.name,
       startTime: isExam ? assessment.startTime : assessment.startDate,
+      studentId: item.studentId,
+      examId: item.examId,
+      assignmentId: item.assignmentId,
     };
   });
 

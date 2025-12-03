@@ -84,6 +84,43 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                 break;
             default:
                 break;
+            case "assignment":
+                // Lấy danh sách bài học để chọn
+                const assignmentLessons = await prisma.lesson.findMany({
+                    where: {
+                        // Nếu là giáo viên thì chỉ thấy bài học của mình
+                        ...(role === "teacher" ? { teacherId: currentUserId! } : {}),
+                    },
+                    select: { id: true, name: true },
+                });
+                relatedData = { lessons: assignmentLessons };
+                break;
+            case "result":
+                // 1. Lấy danh sách Học sinh
+                const resultStudents = await prisma.student.findMany({
+                    select: { id: true, name: true, surname: true },
+                });
+                // 2. Lấy danh sách Exams (có thể lọc theo giáo viên nếu cần)
+                const resultExams = await prisma.exam.findMany({
+                    where: {
+                        // ...(role === "teacher" ? { lesson: { teacherId: currentUserId! } } : {}),
+                    },
+                    select: { id: true, title: true },
+                });
+                // 3. Lấy danh sách Assignments
+                const resultAssignments = await prisma.assignment.findMany({
+                    where: {
+                        // ...(role === "teacher" ? { lesson: { teacherId: currentUserId! } } : {}),
+                    },
+                    select: { id: true, title: true },
+                });
+
+                relatedData = {
+                    students: resultStudents,
+                    exams: resultExams,
+                    assignments: resultAssignments
+                };
+                break;
         }
     }
 
