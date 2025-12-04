@@ -88,7 +88,7 @@ export const studentSchema = z.object({
         .regex(/^0\d{9}$/, { message: "Số điện thoại phải có 10 số và bắt đầu bằng số 0!" }),
     address: z.string(),
     img: z.string().optional().nullable(),
-    bloodType: z.string(),
+    bloodType: z.string().optional().or(z.literal("")),
 
     // SỬA: Copy logic xử lý ngày sinh từ Teacher sang
     birthday: z.preprocess((val) => {

@@ -318,7 +318,7 @@ export const createStudent = async (
                 phone: data.phone || null,
                 address: data.address,
                 img: data.img || null,
-                bloodType: data.bloodType,
+                bloodType: data.bloodType || "",
                 sex: data.sex,
                 birthday: new Date(data.birthday),
                 gradeId: data.gradeId,
@@ -392,7 +392,7 @@ export const updateStudent = async (
                 // Server chỉ cần nhận và lưu. Nếu null thì lưu null.
                 img: data.img || null,
 
-                bloodType: data.bloodType,
+                bloodType: data.bloodType || "",
                 sex: data.sex,
                 birthday: birthDate,
                 gradeId: data.gradeId,

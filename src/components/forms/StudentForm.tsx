@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import InputField from "../InputField";
 import Image from "next/image";
 import { Dispatch, SetStateAction, useEffect, useState, useTransition } from "react";
 import { studentSchema, StudentSchema } from "@/lib/formValidationSchemas";
@@ -39,7 +38,6 @@ const StudentForm = ({
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  // --- SỬA Ở ĐÂY: Dùng useEffect để nạp dữ liệu cũ ---
   useEffect(() => {
     if (type === "update" && data) {
       reset({
@@ -47,14 +45,10 @@ const StudentForm = ({
         birthday: data.birthday
           ? new Date(data.birthday).toISOString().split("T")[0]
           : undefined,
-        // QUAN TRỌNG: Ép kiểu classId thành chuỗi (String) để khớp với ô Radio
         classId: data.classId ? String(data.classId) : undefined,
       });
-      // Set ảnh cũ nếu có để hiển thị preview (tuỳ chọn)
-      // setImg(data.img);
     }
   }, [data, type, reset]);
-  // ------------------------------------------------
 
   const onSubmit = handleSubmit((formData) => {
     const submittedData = {
@@ -85,6 +79,7 @@ const StudentForm = ({
   });
 
   const { grades, classes, parents } = relatedData;
+  const inputClass = "ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full h-[40px]";
 
   return (
     <form className="flex flex-col gap-8" onSubmit={onSubmit}>
@@ -92,166 +87,120 @@ const StudentForm = ({
         {type === "create" ? "Tạo học viên mới" : "Cập nhật học viên"}
       </h1>
 
-      {/* --- PHẦN 1: THÔNG TIN XÁC THỰC --- */}
+      {/* --- PHẦN 1: THÔNG TIN XÁC THỰC (Đã sửa thành 3 cột) --- */}
+      <div className="flex flex-col gap-4">
+        <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+          Thông tin xác thực
+        </span>
+        {/* SỬA grid-cols-2 THÀNH grid-cols-3 ĐỂ NẰM TRÊN 1 HÀNG */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Tài khoản</label>
+            <input type="text" {...register("username")} className={inputClass} />
+            {errors.username?.message && <p className="text-xs text-red-400">{errors.username.message.toString()}</p>}
+          </div>
 
-      <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
-        Thông tin xác thực
-      </span>
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Email</label>
+            <input type="email" {...register("email")} className={inputClass} />
+            {errors.email?.message && <p className="text-xs text-red-400">{errors.email.message.toString()}</p>}
+          </div>
 
-      <div className="flex justify-between flex-wrap gap-4">
-        <InputField
-          label="Tài khoản"
-          name="username"
-          defaultValue={data?.username}
-          register={register}
-          error={errors?.username}
-        />
-        <InputField
-          label="Email"
-          name="email"
-          defaultValue={data?.email}
-          register={register}
-          error={errors?.email}
-        />
-        <InputField
-          label="Mật khẩu"
-          name="password"
-          type="password"
-          // Mật khẩu không nên để default value
-          register={register}
-          error={errors?.password}
-        />
-      </div>
-
-
-      {/* --- PHẦN 2: THÔNG TIN CÁ NHÂN (Đầy đủ các trường) --- */}
-
-      <span className="text-xs text-gray-400 font-medium">
-        Thông tin cá nhân
-      </span>
-
-      <div className="flex justify-between flex-wrap gap-4">
-        <InputField
-          label="Tên"
-          name="name"
-          defaultValue={data?.name}
-          register={register}
-          error={errors.name}
-        />
-        <InputField
-          label="Họ"
-          name="surname"
-          defaultValue={data?.surname}
-          register={register}
-          error={errors.surname}
-        />
-        <InputField
-          label="Số điện thoại"
-          name="phone"
-          defaultValue={data?.phone}
-          register={register}
-          error={errors.phone}
-        />
-        <InputField
-          label="Địa chỉ"
-          name="address"
-          defaultValue={data?.address}
-          register={register}
-          error={errors.address}
-        />
-        <InputField
-          label="Nhóm máu"
-          name="bloodType"
-          defaultValue={data?.bloodType}
-          register={register}
-          error={errors.bloodType}
-        />
-        <InputField
-          label="Ngày tháng năm sinh"
-          name="birthday"
-          defaultValue={
-            data?.birthday
-              ? new Date(data.birthday).toISOString().split("T")[0]
-              : ""
-          }
-          register={register}
-          error={errors.birthday}
-          type="date"
-        />
-
-        {/* Parent ID: Bạn phải nhập đúng ID của Parent có trong DB */}
-        <InputField
-          label="Mã phụ huynh"
-          name="parentId"
-          defaultValue={data?.parentId}
-          register={register}
-          error={errors.parentId}
-        />
-
-        {data && (
-          <InputField
-            label="Id"
-            name="id"
-            defaultValue={data?.id}
-            register={register}
-            error={errors?.id}
-            hidden
-          />
-        )}
-
-        <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Giới tính</label>
-          <select
-            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
-            {...register("sex")}
-          // Không cần defaultValue vì đã có trong useForm
-          >
-            <option value="MALE">Nam</option>
-            <option value="FEMALE">Nữ</option>
-          </select>
-          {errors.sex?.message && (
-            <p className="text-xs text-red-400">
-              {errors.sex.message.toString()}
-            </p>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Cấp bậc</label>
-          <select
-            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
-            {...register("gradeId")}
-          >
-            {grades.map((grade: { id: number; level: number }) => (
-              <option value={grade.id} key={grade.id}>
-                {grade.level}
-              </option>
-            ))}
-          </select>
-          {errors.gradeId?.message && (
-            <p className="text-xs text-red-400">
-              {errors.gradeId.message.toString()}
-            </p>
-          )}
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Mật khẩu</label>
+            <input type="password" {...register("password")} className={inputClass} />
+            {errors.password?.message && <p className="text-xs text-red-400">{errors.password.message.toString()}</p>}
+            {type === "update" && <span className="text-[10px] text-gray-400 -mt-1">(Để trống nếu không đổi)</span>}
+          </div>
         </div>
       </div>
 
+      {/* --- PHẦN 2: THÔNG TIN CÁ NHÂN (Vẫn giữ 2 cột) --- */}
+      <div className="flex flex-col gap-4">
+        <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+          Thông tin cá nhân
+        </span>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Tên</label>
+            <input type="text" {...register("name")} className={inputClass} />
+            {errors.name?.message && <p className="text-xs text-red-400">{errors.name.message.toString()}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Họ</label>
+            <input type="text" {...register("surname")} className={inputClass} />
+            {errors.surname?.message && <p className="text-xs text-red-400">{errors.surname.message.toString()}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Số điện thoại</label>
+            <input type="text" {...register("phone")} className={inputClass} />
+            {errors.phone?.message && <p className="text-xs text-red-400">{errors.phone.message.toString()}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Địa chỉ</label>
+            <input type="text" {...register("address")} className={inputClass} />
+            {errors.address?.message && <p className="text-xs text-red-400">{errors.address.message.toString()}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Ngày sinh</label>
+            <input type="date" {...register("birthday")} className={inputClass} />
+            {errors.birthday?.message && <p className="text-xs text-red-400">{errors.birthday.message.toString()}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Phụ huynh (Bắt buộc)</label>
+            <select className={inputClass} {...register("parentId")}>
+              <option value="">-- Chọn phụ huynh --</option>
+              {parents?.map((parent: { id: string; name: string; surname: string }) => (
+                <option value={parent.id} key={parent.id}>
+                  {parent.name} {parent.surname}
+                </option>
+              ))}
+            </select>
+            {errors.parentId?.message && <p className="text-xs text-red-400">{errors.parentId.message.toString()}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Giới tính</label>
+            <select className={inputClass} {...register("sex")}>
+              <option value="MALE">Nam</option>
+              <option value="FEMALE">Nữ</option>
+            </select>
+            {errors.sex?.message && <p className="text-xs text-red-400">{errors.sex.message.toString()}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Cấp bậc (Grade)</label>
+            <select className={inputClass} {...register("gradeId")}>
+              {grades.map((grade: { id: number; level: number }) => (
+                <option value={grade.id} key={grade.id}>
+                  {grade.level}
+                </option>
+              ))}
+            </select>
+            {errors.gradeId?.message && <p className="text-xs text-red-400">{errors.gradeId.message.toString()}</p>}
+          </div>
+
+          {data && <input type="hidden" {...register("id")} defaultValue={data?.id} />}
+        </div>
+      </div>
 
       {/* --- PHẦN 3: LỚP HỌC & UPLOAD ẢNH --- */}
-
       <div className="flex w-full gap-4 flex-col md:flex-row">
 
-        {/* Chọn Lớp Học */}
         <div className="flex flex-col gap-2 w-full md:w-1/2">
           <label className="text-xs text-gray-500">Lớp học</label>
-
           <div className="border border-gray-300 rounded-md p-4 h-40 overflow-y-auto grid grid-cols-2 gap-2 bg-white">
             {classes.map((classItem: { id: number; name: string; capacity: number; _count: { students: number } }) => (
               <div key={classItem.id} className="relative flex items-center">
                 <input
                   type="radio"
                   id={`class-${classItem.id}`}
-                  // SỬA Ở ĐÂY: Ép kiểu ID thành chuỗi để so sánh chính xác với classId trong reset()
                   value={String(classItem.id)}
                   {...register("classId")}
                   className="peer hidden"
@@ -267,19 +216,11 @@ const StudentForm = ({
               </div>
             ))}
           </div>
-
-          {errors.classId?.message && (
-            <p className="text-xs text-red-400">{errors.classId.message.toString()}</p>
-          )}
-          <p className="text-[10px] text-gray-400">
-            * Chọn lớp học cho học viên.
-          </p>
+          {errors.classId?.message && <p className="text-xs text-red-400">{errors.classId.message.toString()}</p>}
         </div>
 
-        {/* Upload Ảnh */}
         <div className="flex flex-col gap-2 w-full md:w-1/2">
           <label className="text-xs text-gray-500 opacity-0 md:opacity-100">Ảnh đại diện</label>
-
           <CldUploadWidget
             uploadPreset="school"
             onSuccess={(result, { widget }) => {
@@ -318,7 +259,7 @@ const StudentForm = ({
       </div>
 
       <button
-        className="bg-blue-400 text-white p-2 rounded-md disabled:bg-blue-200"
+        className="bg-blue-400 text-white p-2 rounded-md disabled:bg-blue-200 hover:bg-blue-500 transition-colors w-full"
         disabled={isPending}
       >
         {isPending ? "Đang xử lý..." : (type === "create" ? "Tạo học viên mới" : "Cập nhật học viên")}

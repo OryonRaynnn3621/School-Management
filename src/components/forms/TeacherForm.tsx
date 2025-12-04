@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import InputField from "../InputField";
 import Image from "next/image";
 import { Dispatch, SetStateAction, useEffect, useState, useTransition } from "react";
 import { teacherSchema, TeacherSchema } from "@/lib/formValidationSchemas";
@@ -25,11 +24,10 @@ const TeacherForm = ({
   const {
     register,
     handleSubmit,
-    reset, // Lấy thêm hàm reset
+    reset,
     formState: { errors },
   } = useForm<TeacherSchema>({
     resolver: zodResolver(teacherSchema),
-    // defaultValues chỉ chạy lần đầu, logic chính sẽ nằm ở useEffect bên dưới
     defaultValues: {
       subjects: [],
     },
@@ -39,8 +37,7 @@ const TeacherForm = ({
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  // --- SỬA QUAN TRỌNG: Dùng useEffect để load dữ liệu cũ ---
-  // Cách này đảm bảo khi mở form Update, dữ liệu luôn được nạp mới nhất
+  // Load dữ liệu cũ khi update
   useEffect(() => {
     if (type === "update" && data) {
       reset({
@@ -48,16 +45,12 @@ const TeacherForm = ({
         birthday: data.birthday
           ? new Date(data.birthday).toISOString().split("T")[0]
           : undefined,
-        // Chuyển danh sách môn học thành mảng ID (String) để khớp với checkbox
         subjects: data.subjects
           ? data.subjects.map((subject: { id: number }) => String(subject.id))
           : [],
       });
-      // Nếu có ảnh cũ, set vào state để hiển thị (tuỳ chọn)
-      // setImg(data.img); 
     }
   }, [data, type, reset]);
-  // -------------------------------------------------------
 
   const onSubmit = handleSubmit((formData) => {
     const submittedData = {
@@ -76,19 +69,21 @@ const TeacherForm = ({
         const result = await action({ success: false, error: false }, submittedData);
 
         if (result.success) {
-          toast.success(`Giảng viên đã được ${type === "create" ? "thêm vào" : "cập nhật"}!`);
+          toast.success(result.message);
           setOpen(false);
           router.refresh();
         } else {
-          toast.error(result.message || "Có lỗi xảy ra!");
+          toast.error(result.message);
         }
       } catch (err) {
-        toast.error("Lỗi kết nối đến máy chủ!");
+        toast.error("Lỗi kết nối!");
       }
     });
   });
 
   const { subjects } = relatedData;
+  // Class chung để đồng bộ style (giống StudentForm)
+  const inputClass = "ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full h-[40px]";
 
   return (
     <form className="flex flex-col gap-8" onSubmit={onSubmit}>
@@ -96,185 +91,157 @@ const TeacherForm = ({
         {type === "create" ? "Thêm giảng viên mới" : "Cập nhật thông tin giảng viên"}
       </h1>
 
-      {/* --- PHẦN 1: THÔNG TIN XÁC THỰC --- */}
-      <span className="text-xs text-gray-400 font-medium">
-        Thông tin xác thực
-      </span>
-      <div className="flex justify-between flex-wrap gap-4">
-        <InputField
-          label="Tài khoản"
-          name="username"
-          // Bỏ defaultValue, để reset() tự xử lý
-          register={register}
-          error={errors?.username}
-        />
-        <InputField
-          label="Email"
-          name="email"
-          register={register}
-          error={errors?.email}
-        />
+      {/* --- PHẦN 1: THÔNG TIN XÁC THỰC (3 Cột) --- */}
+      <div className="flex flex-col gap-4">
+        <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+          Thông tin xác thực
+        </span>
 
-        <InputField
-          label="Mật Khẩu"
-          name="password"
-          type="password"
-          register={register}
-          error={errors?.password}
-        />
-        {type === "update" && (
-          <span className="text-[10px] text-gray-400 -mt-1">
-            (Để trống nếu không muốn đổi)
-          </span>
-        )}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Tài khoản</label>
+            <input type="text" {...register("username")} className={inputClass} />
+            {errors.username?.message && <p className="text-xs text-red-400">{errors.username.message.toString()}</p>}
+          </div>
 
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Email</label>
+            <input type="email" {...register("email")} className={inputClass} />
+            {errors.email?.message && <p className="text-xs text-red-400">{errors.email.message.toString()}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Mật khẩu</label>
+            <input type="password" {...register("password")} className={inputClass} />
+            {errors.password?.message && <p className="text-xs text-red-400">{errors.password.message.toString()}</p>}
+            {type === "update" && <span className="text-[10px] text-gray-400 -mt-1">(Để trống nếu không đổi)</span>}
+          </div>
+        </div>
       </div>
 
-      {/* --- PHẦN 2: THÔNG TIN CÁ NHÂN --- */}
-      <span className="text-xs text-gray-400 font-medium">
-        Thông tin người dùng
-      </span>
-      <div className="flex justify-between flex-wrap gap-4">
-        <InputField
-          label="Tên"
-          name="name"
-          register={register}
-          error={errors.name}
-        />
-        <InputField
-          label="Họ"
-          name="surname"
-          register={register}
-          error={errors.surname}
-        />
-        <InputField
-          label="Số điện thoại"
-          name="phone"
-          register={register}
-          error={errors.phone}
-        />
-        <InputField
-          label="Địa chỉ"
-          name="address"
-          register={register}
-          error={errors.address}
-        />
+      {/* --- PHẦN 2: THÔNG TIN CÁ NHÂN (2 Cột) --- */}
+      <div className="flex flex-col gap-4">
+        <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+          Thông tin cá nhân
+        </span>
 
-        {/* Giới tính */}
-        <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Giới tính</label>
-          <select
-            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
-            {...register("sex")}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Tên</label>
+            <input type="text" {...register("name")} className={inputClass} />
+            {errors.name?.message && <p className="text-xs text-red-400">{errors.name.message.toString()}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Họ</label>
+            <input type="text" {...register("surname")} className={inputClass} />
+            {errors.surname?.message && <p className="text-xs text-red-400">{errors.surname.message.toString()}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Số điện thoại</label>
+            <input type="text" {...register("phone")} className={inputClass} />
+            {errors.phone?.message && <p className="text-xs text-red-400">{errors.phone.message.toString()}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Địa chỉ</label>
+            <input type="text" {...register("address")} className={inputClass} />
+            {errors.address?.message && <p className="text-xs text-red-400">{errors.address.message.toString()}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Ngày sinh</label>
+            <input type="date" {...register("birthday")} className={inputClass} />
+            {errors.birthday?.message && <p className="text-xs text-red-400">{errors.birthday.message.toString()}</p>}
+          </div>
+
+          {/* Giới tính */}
+          <div className="flex flex-col gap-2 w-full">
+            <label className="text-xs text-gray-500">Giới tính</label>
+            <select className={inputClass} {...register("sex")}>
+              <option value="MALE">Nam</option>
+              <option value="FEMALE">Nữ</option>
+            </select>
+            {errors.sex?.message && <p className="text-xs text-red-400">{errors.sex.message.toString()}</p>}
+          </div>
+
+          {data && <input type="hidden" {...register("id")} defaultValue={data?.id} />}
+        </div>
+      </div>
+
+      {/* --- PHẦN 3: MÔN HỌC & UPLOAD ẢNH --- */}
+      <div className="flex w-full gap-4 flex-col md:flex-row">
+
+        {/* Chọn Môn Học (Grid Checkbox) */}
+        <div className="flex flex-col gap-2 w-full md:w-1/2">
+          <label className="text-xs text-gray-500">Môn giảng dạy</label>
+          <div className="border border-gray-300 rounded-md p-4 h-40 overflow-y-auto grid grid-cols-2 gap-2 bg-white">
+            {subjects.map((subject: { id: number; name: string }) => (
+              <div key={subject.id} className="relative flex items-center">
+                <input
+                  type="checkbox"
+                  id={`subject-${subject.id}`}
+                  value={String(subject.id)}
+                  {...register("subjects")}
+                  className="peer hidden"
+                />
+                <label
+                  htmlFor={`subject-${subject.id}`}
+                  className="w-full text-center text-xs font-medium p-2 border border-gray-200 rounded-md cursor-pointer transition-all 
+                                hover:bg-gray-50 
+                                peer-checked:bg-blue-100 peer-checked:border-blue-500 peer-checked:text-blue-700"
+                >
+                  {subject.name}
+                </label>
+              </div>
+            ))}
+          </div>
+          {errors.subjects?.message && <p className="text-xs text-red-400">{errors.subjects.message.toString()}</p>}
+        </div>
+
+        {/* Upload Ảnh */}
+        <div className="flex flex-col gap-2 w-full md:w-1/2">
+          <label className="text-xs text-gray-500 opacity-0 md:opacity-100">Ảnh đại diện</label>
+          <CldUploadWidget
+            uploadPreset="school"
+            onSuccess={(result, { widget }) => {
+              setImg(result.info);
+              widget.close();
+            }}
           >
-            <option value="MALE">Nam</option>
-            <option value="FEMALE">Nữ</option>
-          </select>
-          {errors.sex?.message && (
-            <p className="text-xs text-red-400">
-              {errors.sex.message.toString()}
-            </p>
-          )}
-        </div>
-
-        <InputField
-          label="Ngày tháng năm sinh"
-          name="birthday"
-          register={register}
-          error={errors.birthday}
-          type="date"
-        />
-
-        {data && (
-          <input type="hidden" value={data.id} {...register("id")} />
-        )}
-
-        {/* --- PHẦN 3: MÔN HỌC & UPLOAD ẢNH --- */}
-
-        <div className="flex w-full gap-4 flex-col md:flex-row">
-
-          {/* Subjects Selection */}
-          <div className="flex flex-col gap-2 w-full md:w-1/2">
-            <label className="text-xs text-gray-500">Môn giảng dạy</label>
-
-            <div className="border border-gray-300 rounded-md p-4 h-40 overflow-y-auto grid grid-cols-2 gap-2 bg-white">
-              {subjects.map((subject: { id: number; name: string }) => (
-                <div key={subject.id} className="relative flex items-center">
-                  <input
-                    type="checkbox"
-                    id={`subject-${subject.id}`}
-                    // SỬA DÒNG NÀY: Ép kiểu thành String để khớp với dữ liệu trong useEffect
-                    value={String(subject.id)}
-                    {...register("subjects")}
-                    className="peer hidden"
-                  />
-                  <label
-                    htmlFor={`subject-${subject.id}`}
-                    className="w-full text-center text-xs font-medium p-2 border border-gray-200 rounded-md cursor-pointer transition-all 
-                    hover:bg-gray-50 
-                    peer-checked:bg-blue-100 peer-checked:border-blue-500 peer-checked:text-blue-700"
-                  >
-                    {subject.name}
-                  </label>
+            {({ open }) => {
+              return (
+                <div
+                  className="w-full h-40 border-2 border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 hover:border-blue-400 transition-colors"
+                  onClick={() => open()}
+                >
+                  {img ? (
+                    <>
+                      <Image src="/upload.png" alt="" width={28} height={28} className="mb-2" />
+                      <span className="text-xs text-green-600 font-semibold">✅ Đã chọn ảnh mới</span>
+                    </>
+                  ) : data?.img ? (
+                    <>
+                      <Image src={data.img} alt="Current" width={40} height={40} className="rounded-full mb-2 object-cover" />
+                      <span className="text-xs text-blue-600 font-semibold">🖼️ Giữ ảnh hiện tại</span>
+                      <span className="text-[10px] text-gray-400 mt-1">(Nhấp để thay đổi)</span>
+                    </>
+                  ) : (
+                    <>
+                      <Image src="/upload.png" alt="" width={28} height={28} className="mb-2 opacity-60" />
+                      <span className="text-xs text-gray-500 font-medium">Nhấp để tải ảnh đại diện</span>
+                    </>
+                  )}
                 </div>
-              ))}
-            </div>
-
-            {errors.subjects?.message && (
-              <p className="text-xs text-red-400">
-                {errors.subjects.message.toString()}
-              </p>
-            )}
-            <p className="text-[10px] text-gray-400">
-              * Chọn các môn học giảng viên này phụ trách.
-            </p>
-          </div>
-
-          {/* Image Upload Area */}
-          <div className="flex flex-col gap-2 w-full md:w-1/2">
-            <label className="text-xs text-gray-500 opacity-0 md:opacity-100">Ảnh đại diện</label>
-
-            <CldUploadWidget
-              uploadPreset="school"
-              onSuccess={(result, { widget }) => {
-                setImg(result.info);
-                widget.close();
-              }}
-            >
-              {({ open }) => {
-                return (
-                  <div
-                    className="w-full h-40 border-2 border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 hover:border-blue-400 transition-colors"
-                    onClick={() => open()}
-                  >
-                    {img ? (
-                      <>
-                        <Image src="/upload.png" alt="" width={28} height={28} className="mb-2" />
-                        <span className="text-xs text-green-600 font-semibold">✅ Đã chọn ảnh mới</span>
-                      </>
-                    ) : data?.img ? (
-                      <>
-                        <Image src={data.img} alt="Current" width={40} height={40} className="rounded-full mb-2 object-cover" />
-                        <span className="text-xs text-blue-600 font-semibold">🖼️ Giữ ảnh hiện tại</span>
-                        <span className="text-[10px] text-gray-400 mt-1">(Nhấp để thay đổi)</span>
-                      </>
-                    ) : (
-                      <>
-                        <Image src="/upload.png" alt="" width={28} height={28} className="mb-2 opacity-60" />
-                        <span className="text-xs text-gray-500 font-medium">Nhấp để tải ảnh đại diện</span>
-                      </>
-                    )}
-                  </div>
-                );
-              }}
-            </CldUploadWidget>
-          </div>
+              );
+            }}
+          </CldUploadWidget>
         </div>
-
       </div>
 
       <button
-        className="bg-blue-400 text-white p-2 rounded-md disabled:bg-blue-200 disabled:cursor-not-allowed hover:bg-blue-500 transition-colors"
+        className="bg-blue-400 text-white p-2 rounded-md disabled:bg-blue-200 hover:bg-blue-500 transition-colors w-full"
         disabled={isPending}
       >
         {isPending
