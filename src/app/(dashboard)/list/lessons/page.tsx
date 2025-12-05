@@ -29,7 +29,7 @@ const LessonListPage = async ({
       accessor: "name",
     },
     {
-      header: "Lớp hóc",
+      header: "Lớp học",
       accessor: "class",
     },
     {
@@ -55,7 +55,7 @@ const LessonListPage = async ({
       <td className="flex items-center gap-4 p-4">{item.subject.name}</td>
       <td>{item.class.name}</td>
       <td className="hidden md:table-cell">
-        {item.teacher.name + " " + item.teacher.surname}
+        {item.teacher.surname + " " + item.teacher.name}
       </td>
       <td>
         <div className="flex items-center gap-2">

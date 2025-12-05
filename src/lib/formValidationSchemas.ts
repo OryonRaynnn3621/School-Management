@@ -205,3 +205,28 @@ export const resultSchema = z.object({
 });
 
 export type ResultSchema = z.infer<typeof resultSchema>;
+
+// Lessons
+export const lessonSchema = z.object({
+    id: z.coerce.number().optional(),
+    name: z.string().min(1, { message: "Tên khóa học là bắt buộc!" }),
+    day: z.enum(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"], { message: "Vui lòng chọn thứ!" }),
+    startTime: z.coerce.date({ message: "Thời gian bắt đầu không hợp lệ!" }),
+    endTime: z.coerce.date({ message: "Thời gian kết thúc không hợp lệ!" }),
+    subjectId: z.coerce.number({ message: "Vui lòng chọn môn học!" }),
+    classId: z.coerce.number({ message: "Vui lòng chọn lớp học!" }),
+    teacherId: z.string().min(1, { message: "Vui lòng chọn giảng viên!" }),
+});
+
+export type LessonSchema = z.infer<typeof lessonSchema>;
+
+// Attendance
+export const attendanceSchema = z.object({
+    id: z.coerce.number().optional(),
+    date: z.coerce.date({ message: "Ngày không hợp lệ!" }),
+    present: z.boolean({ message: "Vui lòng chọn trạng thái!" }), // true = Có mặt, false = Vắng
+    studentId: z.string().min(1, { message: "Vui lòng chọn học sinh!" }),
+    lessonId: z.coerce.number({ message: "Vui lòng chọn bài học!" }),
+});
+
+export type AttendanceSchema = z.infer<typeof attendanceSchema>;

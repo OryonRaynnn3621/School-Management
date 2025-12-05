@@ -136,7 +136,7 @@ const AssignmentForm = ({
                         {...register("lessonId")}
                         defaultValue={data?.lessonId}
                     >
-                        <option value="">-- Chọn bài học --</option>
+                        <option value="">-- Chọn khóa học --</option>
                         {lessons?.map((lesson: { id: number; name: string }) => (
                             <option value={lesson.id} key={lesson.id}>
                                 {lesson.name}

@@ -124,6 +124,39 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                     assignments: resultAssignments
                 };
                 break;
+            case "lesson":
+                // Lấy danh sách Môn học
+                const lessonSubjects = await prisma.subject.findMany({
+                    select: { id: true, name: true },
+                });
+                // Lấy danh sách Lớp học
+                const lessonClasses = await prisma.class.findMany({
+                    select: { id: true, name: true },
+                });
+                // Lấy danh sách Giảng viên
+                const lessonTeachers = await prisma.teacher.findMany({
+                    select: { id: true, name: true, surname: true },
+                });
+
+                relatedData = {
+                    subjects: lessonSubjects,
+                    classes: lessonClasses,
+                    teachers: lessonTeachers
+                };
+                break;
+            case "attendance":
+                const attendanceStudents = await prisma.student.findMany({
+                    select: { id: true, name: true, surname: true },
+                });
+                const attendanceLessons = await prisma.lesson.findMany({
+                    select: {
+                        id: true,
+                        name: true,
+                        class: { select: { name: true } } // Lấy thêm tên lớp để dễ chọn
+                    },
+                });
+                relatedData = { students: attendanceStudents, lessons: attendanceLessons };
+                break;
         }
     }
 

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "./prisma";
-import { AnnouncementSchema, AssignmentSchema, ClassSchema, EventSchema, ExamSchema, ParentSchema, ResultSchema, StudentSchema, SubjectSchema, TeacherSchema } from "./formValidationSchemas";
+import { AnnouncementSchema, AssignmentSchema, AttendanceSchema, ClassSchema, EventSchema, ExamSchema, LessonSchema, ParentSchema, ResultSchema, StudentSchema, SubjectSchema, TeacherSchema } from "./formValidationSchemas";
 import { clerkClient } from "@clerk/nextjs/server";
 
 
@@ -919,5 +919,147 @@ export const deleteResult = async (
     } catch (err) {
         console.log("DELETE RESULT ERROR:", err);
         return { success: false, error: true, message: "Không thể xóa kết quả này!" };
+    }
+};
+
+// --- LESSON ACTIONS ---
+export const createLesson = async (
+    currentState: CurrentState,
+    data: LessonSchema
+) => {
+    try {
+        await prisma.lesson.create({
+            data: {
+                name: data.name,
+                day: data.day,
+                startTime: data.startTime,
+                endTime: data.endTime,
+                subjectId: data.subjectId,
+                classId: data.classId,
+                teacherId: data.teacherId,
+            },
+        });
+
+        // revalidatePath("/list/lessons");
+        return { success: true, error: false, message: "Tạo khóa học thành công!" };
+    } catch (err) {
+        console.log("CREATE LESSON ERROR:", err);
+        return { success: false, error: true, message: "Đã có lỗi xảy ra!" };
+    }
+};
+
+export const updateLesson = async (
+    currentState: CurrentState,
+    data: LessonSchema
+) => {
+    try {
+        await prisma.lesson.update({
+            where: {
+                id: data.id,
+            },
+            data: {
+                name: data.name,
+                day: data.day,
+                startTime: data.startTime,
+                endTime: data.endTime,
+                subjectId: data.subjectId,
+                classId: data.classId,
+                teacherId: data.teacherId,
+            },
+        });
+
+        // revalidatePath("/list/lessons");
+        return { success: true, error: false, message: "Cập nhật thành công!" };
+    } catch (err) {
+        console.log("UPDATE LESSON ERROR:", err);
+        return { success: false, error: true, message: "Đã có lỗi xảy ra!" };
+    }
+};
+
+export const deleteLesson = async (
+    currentState: CurrentState,
+    data: FormData
+) => {
+    const id = data.get("id") as string;
+    try {
+        await prisma.lesson.delete({
+            where: {
+                id: parseInt(id),
+            },
+        });
+
+        // revalidatePath("/list/lessons");
+        return { success: true, error: false, message: "Xóa khóa học thành công!" };
+    } catch (err) {
+        console.log("DELETE LESSON ERROR:", err);
+        return { success: false, error: true, message: "Không thể xóa khóa học này!" };
+    }
+};
+
+// ... imports AttendanceSchema
+
+// --- ATTENDANCE ACTIONS ---
+
+export const createAttendance = async (
+    currentState: CurrentState,
+    data: AttendanceSchema
+) => {
+    try {
+        await prisma.attendance.create({
+            data: {
+                date: data.date,
+                present: data.present,
+                studentId: data.studentId,
+                lessonId: data.lessonId,
+            },
+        });
+        // revalidatePath("/list/attendance");
+        return { success: true, error: false, message: "Điểm danh thành công!" };
+    } catch (err) {
+        console.log("CREATE ATTENDANCE ERROR:", err);
+        return { success: false, error: true, message: "Đã có lỗi xảy ra!" };
+    }
+};
+
+export const updateAttendance = async (
+    currentState: CurrentState,
+    data: AttendanceSchema
+) => {
+    try {
+        await prisma.attendance.update({
+            where: {
+                id: data.id,
+            },
+            data: {
+                date: data.date,
+                present: data.present,
+                studentId: data.studentId,
+                lessonId: data.lessonId,
+            },
+        });
+        // revalidatePath("/list/attendance");
+        return { success: true, error: false, message: "Cập nhật thành công!" };
+    } catch (err) {
+        console.log("UPDATE ATTENDANCE ERROR:", err);
+        return { success: false, error: true, message: "Đã có lỗi xảy ra!" };
+    }
+};
+
+export const deleteAttendance = async (
+    currentState: CurrentState,
+    data: FormData
+) => {
+    const id = data.get("id") as string;
+    try {
+        await prisma.attendance.delete({
+            where: {
+                id: parseInt(id),
+            },
+        });
+        // revalidatePath("/list/attendance");
+        return { success: true, error: false, message: "Xóa điểm danh thành công!" };
+    } catch (err) {
+        console.log("DELETE ATTENDANCE ERROR:", err);
+        return { success: false, error: true, message: "Không thể xóa bản ghi này!" };
     }
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteClass, deleteExam, deleteParent, deleteStudent, deleteSubject, deleteTeacher, deleteAnnouncement, deleteEvent, deleteAssignment, deleteResult } from "@/lib/actions";
+import { deleteClass, deleteExam, deleteParent, deleteStudent, deleteSubject, deleteTeacher, deleteAnnouncement, deleteEvent, deleteAssignment, deleteResult, deleteLesson, deleteAttendance } from "@/lib/actions";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -17,12 +17,11 @@ const deleteActionMap = {
   teacher: deleteTeacher,
   student: deleteStudent,
   exam: deleteExam,
-  // TODO: OTHER DELETE ACTIONS
   parent: deleteParent,
-  lesson: deleteSubject,
+  lesson: deleteLesson,
   assignment: deleteAssignment,
   result: deleteResult,
-  attendance: deleteSubject,
+  attendance: deleteAttendance,
   event: deleteEvent,
   announcement: deleteAnnouncement,
 };
@@ -57,6 +56,12 @@ const AssignmentForm = dynamic(() => import("./forms/AssignmentForm"), {
   loading: () => <h1>Loading...</h1>,
 });
 const ResultForm = dynamic(() => import("./forms/ResultForm"), {
+  loading: () => <h1>Loading...</h1>,
+});
+const LessonForm = dynamic(() => import("./forms/LessonForm"), {
+  loading: () => <h1>Loading...</h1>,
+});
+const AttendanceForm = dynamic(() => import("./forms/AttendanceForm"), {
   loading: () => <h1>Loading...</h1>,
 });
 
@@ -109,7 +114,6 @@ const forms: {
       setOpen={setOpen}
       relatedData={relatedData}
     />
-    // TODO OTHER LIST ITEMS
   ),
   parent: (type, data, setOpen, relatedData) => (
     <ParentForm
@@ -145,6 +149,22 @@ const forms: {
   ),
   result: (type, data, setOpen, relatedData) => (
     <ResultForm
+      type={type}
+      data={data}
+      setOpen={setOpen}
+      relatedData={relatedData}
+    />
+  ),
+  lesson: (type, data, setOpen, relatedData) => (
+    <LessonForm
+      type={type}
+      data={data}
+      setOpen={setOpen}
+      relatedData={relatedData}
+    />
+  ),
+  attendance: (type, data, setOpen, relatedData) => (
+    <AttendanceForm
       type={type}
       data={data}
       setOpen={setOpen}
