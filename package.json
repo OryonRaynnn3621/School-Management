@@ -14,6 +14,7 @@
     "@hookform/resolvers": "^3.9.0",
     "@prisma/client": "^6.19.0",
     "@types/react-big-calendar": "^1.8.9",
+    "lucide-react": "^0.556.0",
     "moment": "^2.30.1",
     "next": "^14.2.25",
     "next-cloudinary": "^6.17.5",
