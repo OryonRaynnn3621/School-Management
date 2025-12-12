@@ -36,37 +36,37 @@ const ResultListPage = async ({
 
   const columns = [
     {
-      header: "Title",
+      header: "Tiêu đề",
       accessor: "title",
     },
     {
-      header: "Student",
+      header: "Học viên",
       accessor: "student",
     },
     {
-      header: "Score",
+      header: "Điểm số",
       accessor: "score",
       className: "hidden md:table-cell",
     },
     {
-      header: "Teacher",
+      header: "Giảng viên",
       accessor: "teacher",
       className: "hidden md:table-cell",
     },
     {
-      header: "Class",
+      header: "Lớp học",
       accessor: "class",
       className: "hidden md:table-cell",
     },
     {
-      header: "Date",
+      header: "Ngày",
       accessor: "date",
       className: "hidden md:table-cell",
     },
     ...(role === "admin" || role === "teacher"
       ? [
         {
-          header: "Actions",
+          header: "Tùy chọn",
           accessor: "action",
         },
       ]
@@ -79,10 +79,13 @@ const ResultListPage = async ({
       className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
     >
       <td className="flex items-center gap-4 p-4">{item.title}</td>
-      <td>{item.studentName + " " + item.studentName}</td>
+
+      {/* --- SỬA DÒNG NÀY (Hiển thị Tên + Họ) --- */}
+      <td>{item.studentSurname + " " + item.studentName}</td>
+
       <td className="hidden md:table-cell">{item.score}</td>
       <td className="hidden md:table-cell">
-        {item.teacherName + " " + item.teacherSurname}
+        {item.teacherSurname + " " + item.teacherName}
       </td>
       <td className="hidden md:table-cell">{item.className}</td>
       <td className="hidden md:table-cell">
@@ -207,22 +210,21 @@ const ResultListPage = async ({
       examId: item.examId,
       assignmentId: item.assignmentId,
     };
-  });
-
+  }).filter((item: any) => item !== null);
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
       {/* TOP */}
       <div className="flex items-center justify-between">
-        <h1 className="hidden md:block text-lg font-semibold">All Results</h1>
+        <h1 className="hidden md:block text-lg font-semibold">Kết quả kiểm tra</h1>
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <TableSearch />
           <div className="flex items-center gap-4 self-end">
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
+            {/* <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               <Image src="/filter.png" alt="" width={14} height={14} />
             </button>
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               <Image src="/sort.png" alt="" width={14} height={14} />
-            </button>
+            </button> */}
             {(role === "admin" || role === "teacher") && (
               <FormContainer table="result" type="create" />
             )}

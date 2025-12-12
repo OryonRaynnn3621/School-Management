@@ -8,7 +8,8 @@ import { Class, Prisma, Teacher } from "@prisma/client";
 import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 
-type ClassList = Class & { supervisor: Teacher };
+// Thêm " | null" vì supervisor có thể không tồn tại
+type ClassList = Class & { supervisor: Teacher | null };
 
 const ClassListPage = async ({
   searchParams,
@@ -59,7 +60,13 @@ const ClassListPage = async ({
       <td className="hidden md:table-cell">{item.capacity}</td>
       <td className="hidden md:table-cell">{item.name[0]}</td>
       <td className="hidden md:table-cell">
-        {item.supervisor.surname + " " + item.supervisor.name}
+        {/* --- SỬA ĐOẠN NÀY --- */}
+        {/* Kiểm tra nếu có supervisor thì mới hiện tên, nếu không thì để trống hoặc hiện "Chưa có" */}
+        {item.supervisor
+          ? item.supervisor.surname + " " + item.supervisor.name
+          : <span className="text-gray-400 italic">Chưa có chủ nhiệm</span>
+        }
+        {/* ------------------- */}
       </td>
       <td>
         <div className="flex items-center gap-2">
@@ -119,12 +126,12 @@ const ClassListPage = async ({
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <TableSearch />
           <div className="flex items-center gap-4 self-end">
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
+            {/* <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               <Image src="/filter.png" alt="" width={14} height={14} />
             </button>
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               <Image src="/sort.png" alt="" width={14} height={14} />
-            </button>
+            </button> */}
             {role === "admin" && <FormContainer table="class" type="create" />}
           </div>
         </div>

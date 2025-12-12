@@ -192,9 +192,6 @@ export const createTeacher = async (
         return { success: false, error: true, message: "Đã có lỗi xảy ra khi tạo giáo viên!" };
     }
 };
-// actions.ts
-
-// ... (phần imports và createTeacher giữ nguyên)
 
 export const updateTeacher = async (
     currentState: CurrentState,
@@ -261,28 +258,82 @@ export const updateTeacher = async (
     }
 };
 
+// --- 2. SỬA HÀM DELETE (Để xóa sạch dữ liệu cũ) ---
 export const deleteTeacher = async (
     currentState: CurrentState,
     data: FormData
 ) => {
     const id = data.get("id") as string;
     try {
-        const client = await clerkClient();
+        // BƯỚC 1: Xóa trên Clerk (Nếu là user thật)
+        if (id.startsWith("user_")) {
+            const client = await clerkClient();
+            try {
+                await client.users.deleteUser(id);
+            } catch (clerkErr: any) {
+                if (clerkErr.errors?.[0]?.code === 'resource_not_found') {
+                    console.log(`User ${id} không có trên Clerk, tiếp tục xóa DB...`);
+                }
+            }
+        }
 
-        await client.users.deleteUser(id);
+        // BƯỚC 2: DỌN DẸP RÀNG BUỘC DỮ LIỆU (CASCADE DELETE THỦ CÔNG)
 
+        // 2.1. Gỡ giáo viên khỏi lớp chủ nhiệm
+        await prisma.class.updateMany({
+            where: { supervisorId: id },
+            data: { supervisorId: null }
+        });
+
+        // 2.2. Tìm tất cả BÀI HỌC (Lessons) của giáo viên này
+        const teacherLessons = await prisma.lesson.findMany({
+            where: { teacherId: id },
+            select: { id: true }
+        });
+        const lessonIds = teacherLessons.map(l => l.id);
+
+        if (lessonIds.length > 0) {
+            // Xóa Điểm danh (Attendance) thuộc về các bài học này
+            await prisma.attendance.deleteMany({
+                where: { lessonId: { in: lessonIds } }
+            });
+
+            // Xóa Bài tập (Assignments) thuộc về các bài học này
+            // (Lưu ý: Nếu Assignment có Result, lệnh này vẫn có thể lỗi nếu chưa xóa Result. 
+            // Nhưng thường seed data không có Result phức tạp).
+            await prisma.assignment.deleteMany({
+                where: { lessonId: { in: lessonIds } }
+            });
+
+            // Xóa Bài kiểm tra (Exams) thuộc về các bài học này
+            await prisma.exam.deleteMany({
+                where: { lessonId: { in: lessonIds } }
+            });
+
+            // Cuối cùng: Xóa chính các Bài học (Lessons)
+            await prisma.lesson.deleteMany({
+                where: { id: { in: lessonIds } }
+            });
+        }
+
+        // BƯỚC 3: XÓA GIÁO VIÊN
         await prisma.teacher.delete({
             where: {
                 id: id,
             },
         });
 
-        // revalidatePath("/list/teachers");
-        // SỬA: Thêm message
+        // Cập nhật lại giao diện
+        revalidatePath("/list/teachers");
+
         return { success: true, error: false, message: "Xóa giáo viên thành công!" };
-    } catch (err) {
-        console.log(err);
-        return { success: false, error: true, message: "Không thể xóa giáo viên này!" };
+    } catch (err: any) {
+        console.log("DELETE TEACHER ERROR:", err);
+        // Báo lỗi cụ thể hơn nếu vẫn bị kẹt
+        if (err.code === "P2003") {
+            return { success: false, error: true, message: "Không thể xóa: Dữ liệu này dính líu đến Kết quả học tập (Results) hoặc bảng khác!" };
+        }
+        return { success: false, error: true, message: "Đã có lỗi xảy ra khi xóa!" };
     }
 };
 
@@ -418,21 +469,49 @@ export const deleteStudent = async (
 ) => {
     const id = data.get("id") as string;
     try {
-        const client = await clerkClient();
-        // Xóa Clerk trước
-        await client.users.deleteUser(id);
-        // Xóa Prisma sau
+        // BƯỚC 1: Xử lý xóa bên Clerk (Chỉ áp dụng với user thật có ID bắt đầu bằng "user_")
+        if (id.startsWith("user_")) {
+            const client = await clerkClient();
+            try {
+                await client.users.deleteUser(id);
+            } catch (clerkErr: any) {
+                // Nếu không tìm thấy trên Clerk (đã xóa từ trước), bỏ qua lỗi này để chạy tiếp
+                if (clerkErr.errors?.[0]?.code === 'resource_not_found') {
+                    console.log(`Học viên ${id} không tồn tại trên Clerk, tiếp tục xóa DB...`);
+                } else {
+                    console.error("Lỗi Clerk khác:", clerkErr);
+                }
+            }
+        }
+
+        // BƯỚC 2: XÓA DỮ LIỆU LIÊN QUAN (Cascade Delete thủ công)
+        // Phải xóa Điểm và Điểm danh của học viên này trước thì mới xóa được người.
+
+        // 2.1. Xóa tất cả Điểm số (Result) của học viên này
+        await prisma.result.deleteMany({
+            where: { studentId: id }
+        });
+
+        // 2.2. Xóa tất cả dữ liệu Điểm danh (Attendance) của học viên này
+        await prisma.attendance.deleteMany({
+            where: { studentId: id }
+        });
+
+        // BƯỚC 3: XÓA HỌC VIÊN TRONG DATABASE
         await prisma.student.delete({
             where: { id: id },
         });
 
-        // revalidatePath("/list/students");
+        // Cập nhật lại danh sách ngay lập tức
+        revalidatePath("/list/students");
+
         return { success: true, error: false, message: "Xóa học viên thành công!" };
     } catch (err) {
         console.log("DELETE STUDENT ERROR:", err);
-        return { success: false, error: true, message: "Không thể xóa học viên này!" };
+        return { success: false, error: true, message: "Không thể xóa học viên này (Lỗi hệ thống hoặc ràng buộc chưa xử lý hết)!" };
     }
 };
+
 export const createExam = async (
     currentState: CurrentState,
     data: ExamSchema
@@ -996,10 +1075,7 @@ export const deleteLesson = async (
     }
 };
 
-// ... imports AttendanceSchema
-
 // --- ATTENDANCE ACTIONS ---
-
 export const createAttendance = async (
     currentState: CurrentState,
     data: AttendanceSchema

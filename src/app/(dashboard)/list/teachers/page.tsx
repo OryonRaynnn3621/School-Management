@@ -140,6 +140,7 @@ const TeacherListPage = async ({
       },
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
+      orderBy: { createdAt: 'asc' },
     }),
     prisma.teacher.count({ where: query }),
   ]);

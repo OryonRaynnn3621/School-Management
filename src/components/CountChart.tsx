@@ -3,10 +3,8 @@ import Image from "next/image";
 import {
   RadialBarChart,
   RadialBar,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
-
 
 const CountChart = ({ boys, girls }: { boys: number; girls: number }) => {
   const data = [
@@ -26,8 +24,9 @@ const CountChart = ({ boys, girls }: { boys: number; girls: number }) => {
       fill: "#C3EBFA",
     },
   ];
+
   return (
-    <div className="relative w-full h-[75%]">
+    <div className="relative w-full h-full">
       <ResponsiveContainer>
         <RadialBarChart
           cx="50%"
@@ -40,12 +39,14 @@ const CountChart = ({ boys, girls }: { boys: number; girls: number }) => {
           <RadialBar background dataKey="count" />
         </RadialBarChart>
       </ResponsiveContainer>
+
+      {/* Icon căn giữa tuyệt đối */}
       <Image
         src="/maleFemale.png"
         alt=""
         width={50}
         height={50}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-80"
       />
     </div>
   );

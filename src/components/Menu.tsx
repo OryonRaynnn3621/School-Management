@@ -1,7 +1,5 @@
-
 import { currentUser } from "@clerk/nextjs/server";
-import Image from "next/image";
-import Link from "next/link";
+import MenuLink from "./MenuLink";
 
 const menuItems = [
   {
@@ -87,43 +85,26 @@ const menuItems = [
       },
     ],
   },
-  // {
-  //   title: "OTHER",
-  //   items: [
-
-  //     {
-  //       icon: "/logout.png",
-  //       label: "Logout",
-  //       href: "/logout",
-  //       visible: ["admin", "teacher", "student", "parent"],
-  //     },
-  //   ],
-  // },
 ];
 
 const Menu = async () => {
   const user = await currentUser();
   const role = user?.publicMetadata.role as string;
+
   return (
-    <div className="mt-4 text-sm">
+    // SỬA: Xóa class mt-4 ở đây để menu đẩy lên sát hơn
+    <div className="flex flex-col gap-4">
       {menuItems.map((i) => (
         <div className="flex flex-col gap-2" key={i.title}>
-          <span className="hidden lg:block text-gray-400 font-light my-4">
+          {/* SỬA: Đổi my-4 (cách trên dưới) thành mb-2 (chỉ cách dưới) để tiêu đề gọn hơn */}
+          <span className="hidden lg:block text-gray-400 font-medium mb-2 text-xs uppercase">
             {i.title}
           </span>
           {i.items.map((item) => {
             if (item.visible.includes(role)) {
-              return (
-                <Link
-                  href={item.href}
-                  key={item.label}
-                  className="flex items-center justify-center lg:justify-start gap-4 text-gray-500 py-2 md:px-2 rounded-md hover:bg-lamaSkyLight"
-                >
-                  <Image src={item.icon} alt="" width={20} height={20} />
-                  <span className="hidden lg:block">{item.label}</span>
-                </Link>
-              );
+              return <MenuLink item={item} key={item.label} />;
             }
+            return null;
           })}
         </div>
       ))}

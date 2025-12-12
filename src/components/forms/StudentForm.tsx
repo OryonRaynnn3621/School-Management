@@ -175,7 +175,7 @@ const StudentForm = ({
           </div>
 
           <div className="flex flex-col gap-2 w-full">
-            <label className="text-xs text-gray-500">Cấp bậc (Grade)</label>
+            <label className="text-xs text-gray-500">Cấp bậc</label>
             <select className={inputClass} {...register("gradeId")}>
               {grades.map((grade: { id: number; level: number }) => (
                 <option value={grade.id} key={grade.id}>

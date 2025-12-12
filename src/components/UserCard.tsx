@@ -20,11 +20,20 @@ const UserCard = async ({
     parent: "Phụ huynh",
   };
 
-  const colorMap: Record<typeof type, string> = {
-    admin: "bg-[#D6D6FF]",
-    teacher: "bg-[#F8E79C]",
-    student: "bg-[#C8F1FF]",
-    parent: "bg-[#FFD6E7]",
+  // Sử dụng Gradient màu pastel hiện đại hơn
+  const gradientMap: Record<typeof type, string> = {
+    admin: "bg-gradient-to-br from-purple-100 to-indigo-100 border-purple-200",
+    teacher: "bg-gradient-to-br from-yellow-100 to-amber-100 border-yellow-200",
+    student: "bg-gradient-to-br from-cyan-100 to-blue-100 border-cyan-200",
+    parent: "bg-gradient-to-br from-pink-100 to-rose-100 border-pink-200",
+  };
+
+  // Màu text tương ứng để tạo độ tương phản
+  const textMap: Record<typeof type, string> = {
+    admin: "text-purple-600",
+    teacher: "text-yellow-600",
+    student: "text-cyan-600",
+    parent: "text-pink-600",
   };
 
   const currentDate = new Date();
@@ -33,17 +42,21 @@ const UserCard = async ({
   const data = await modelMap[type].count();
 
   return (
-    <div className={`rounded-2xl p-4 flex-1 min-w-[130px] ${colorMap[type]}`}>
-      <div className="flex justify-between items-center">
-        <span className="text-[10px] bg-white px-2 py-1 rounded-full text-green-600">
+    <div
+      className={`rounded-2xl p-4 flex-1 min-w-[130px] border shadow-sm hover:shadow-md transition-shadow duration-300 ${gradientMap[type]}`}
+    >
+      <div className="flex justify-between items-center mb-4">
+        <span className="text-[10px] bg-white/60 px-2 py-1 rounded-full text-gray-500 font-medium border border-white">
           {dateLabel}
         </span>
-        <Image src="/more.png" alt="" width={20} height={20} />
+        {/* <Image src="/more.png" alt="" width={20} height={20} className="opacity-60 cursor-pointer" /> */}
       </div>
 
-      <h1 className="text-2xl font-semibold my-4">{data}</h1>
+      <h1 className={`text-3xl font-bold my-2 ${textMap[type]}`}>
+        {data.toLocaleString()} {/* Thêm dấu phẩy ngăn cách hàng nghìn */}
+      </h1>
 
-      <h2 className="capitalize text-sm font-medium text-gray-600">
+      <h2 className="text-sm font-medium text-gray-600 capitalize">
         {viMap[type]}
       </h2>
     </div>
