@@ -4,7 +4,9 @@ import { z } from "zod";
 export const subjectSchema = z.object({
     id: z.coerce.number().optional(),
     name: z.string().min(1, { message: "Tên môn học là bắt buộc!" }),
-    teachers: z.array(z.string()), // teacher ids
+
+    // SỬA: Thêm .min(1) để bắt buộc mảng phải có ít nhất 1 phần tử
+    teachers: z.array(z.string()).min(1, { message: "Vui lòng chọn ít nhất một giảng viên!" }),
 });
 
 export type SubjectSchema = z.infer<typeof subjectSchema>;
@@ -15,11 +17,12 @@ export const classSchema = z.object({
     name: z.string().min(1, { message: "Tên lớp là bắt buộc!" }),
     capacity: z.coerce.number().min(1, { message: "Sĩ số phải lớn hơn 0!" }),
     gradeId: z.coerce.number().min(1, { message: "Cấp bậc học là bắt buộc!" }),
-    supervisorId: z.coerce.string().optional(),
+
+    // SỬA: Bỏ optional, thêm min(1) để bắt buộc chọn
+    supervisorId: z.string().min(1, { message: "Vui lòng chọn giáo viên chủ nhiệm!" }),
 });
 
 export type ClassSchema = z.infer<typeof classSchema>;
-
 //Teachers
 export const teacherSchema = z.object({
     id: z.string().optional(),
@@ -109,19 +112,37 @@ export const studentSchema = z.object({
 export type StudentSchema = z.infer<typeof studentSchema>;
 
 
-//Exams
+// Exams
 export const examSchema = z.object({
     id: z.coerce.number().optional(),
     title: z.string().min(1, { message: "Tên bài kiểm tra là bắt buộc!" }),
-    // SỬA: Xử lý chuỗi ngày tháng từ input datetime-local
-    startTime: z.coerce.date({ message: "Thời gian bắt đầu không hợp lệ!" }),
-    endTime: z.coerce.date({ message: "Thời gian kết thúc không hợp lệ!" }),
-    lessonId: z.coerce.number({ message: "Môn học là bắt buộc!" }),
+
+    // SỬA 1: Xử lý Start Time để hiện tiếng Việt
+    startTime: z.preprocess((val) => {
+        if (typeof val === "string" && val.trim() !== "") return new Date(val);
+        return undefined;
+    },
+        z.instanceof(Date, { message: "Vui lòng chọn thời gian bắt đầu!" })
+            .refine((date) => !isNaN(date.getTime()), { message: "Thời gian không hợp lệ!" })
+    ),
+
+    // SỬA 2: Xử lý End Time để hiện tiếng Việt
+    endTime: z.preprocess((val) => {
+        if (typeof val === "string" && val.trim() !== "") return new Date(val);
+        return undefined;
+    },
+        z.instanceof(Date, { message: "Vui lòng chọn thời gian kết thúc!" })
+            .refine((date) => !isNaN(date.getTime()), { message: "Thời gian không hợp lệ!" })
+    ),
+
+    // SỬA 3: Bắt buộc chọn khóa học (ID phải >= 1)
+    lessonId: z.coerce.number({ message: "Vui lòng chọn khóa học!" })
+        .min(1, { message: "Vui lòng chọn khóa học!" }),
 })
-    // THÊM: Validate logic Start < End
+    // Validate logic Start < End
     .refine((data) => data.startTime < data.endTime, {
         message: "Thời gian kết thúc phải sau thời gian bắt đầu!",
-        path: ["endTime"], // Lỗi sẽ hiện ở ô End Date
+        path: ["endTime"],
     });
 
 export type ExamSchema = z.infer<typeof examSchema>;
@@ -153,12 +174,23 @@ export const parentSchema = z.object({
 
 export type ParentSchema = z.infer<typeof parentSchema>;
 
-//Announcement
 export const announcementSchema = z.object({
     id: z.coerce.number().optional(),
     title: z.string().min(1, { message: "Tiêu đề là bắt buộc!" }),
     description: z.string().min(1, { message: "Nội dung là bắt buộc!" }),
-    date: z.coerce.date({ message: "Ngày không hợp lệ!" }),
+
+    date: z.preprocess((val) => {
+        if (typeof val === "string" && val.trim() !== "") {
+            return new Date(val);
+        }
+        return val;
+    },
+        z.instanceof(Date, { message: "Vui lòng chọn ngày!" })
+            .refine((date) => !isNaN(date.getTime()), {
+                message: "Ngày không hợp lệ!",
+            })
+    ),
+
     classId: z.coerce.number().optional().or(z.literal("")),
 });
 
@@ -168,9 +200,26 @@ export type AnnouncementSchema = z.infer<typeof announcementSchema>;
 export const eventSchema = z.object({
     id: z.coerce.number().optional(),
     title: z.string().min(1, { message: "Tiêu đề là bắt buộc!" }),
-    description: z.string().optional(),
-    startTime: z.coerce.date({ message: "Thời gian bắt đầu không hợp lệ!" }),
-    endTime: z.coerce.date({ message: "Thời gian kết thúc không hợp lệ!" }),
+    description: z.string().min(1, { message: "Mô tả là bắt buộc!" }),
+
+    // Đã gỡ bỏ logic chặn ngày quá khứ cho startTime
+    startTime: z.preprocess((val) => {
+        if (typeof val === "string" && val.trim() !== "") return new Date(val);
+        return val;
+    },
+        z.instanceof(Date, { message: "Vui lòng chọn thời gian bắt đầu!" })
+            .refine((date) => !isNaN(date.getTime()), { message: "Thời gian không hợp lệ!" })
+    ),
+
+    // EndTime giữ nguyên
+    endTime: z.preprocess((val) => {
+        if (typeof val === "string" && val.trim() !== "") return new Date(val);
+        return val;
+    },
+        z.instanceof(Date, { message: "Vui lòng chọn thời gian kết thúc!" })
+            .refine((date) => !isNaN(date.getTime()), { message: "Thời gian không hợp lệ!" })
+    ),
+
     classId: z.coerce.number().optional().or(z.literal("")),
 })
     .refine((data) => data.startTime < data.endTime, {
@@ -183,10 +232,30 @@ export type EventSchema = z.infer<typeof eventSchema>;
 // Assignments
 export const assignmentSchema = z.object({
     id: z.coerce.number().optional(),
-    lessonId: z.coerce.number({ message: "Vui lòng chọn bài học!" }),
+
+    // SỬA 1: Thêm .min(1) để chặn giá trị rỗng (vì rỗng coerce thành 0)
+    lessonId: z.coerce.number({ message: "Vui lòng chọn bài học!" })
+        .min(1, { message: "Vui lòng chọn bài học!" }),
+
     title: z.string().min(1, { message: "Tiêu đề là bắt buộc!" }),
-    startDate: z.coerce.date({ message: "Ngày bắt đầu không hợp lệ!" }),
-    dueDate: z.coerce.date({ message: "Hạn nộp không hợp lệ!" }),
+
+    // SỬA 2: Dùng preprocess cho startDate để hiện thông báo tiếng Việt
+    startDate: z.preprocess((val) => {
+        if (typeof val === "string" && val.trim() !== "") return new Date(val);
+        return undefined;
+    },
+        z.instanceof(Date, { message: "Vui lòng chọn ngày bắt đầu!" })
+            .refine((date) => !isNaN(date.getTime()), { message: "Ngày bắt đầu không hợp lệ!" })
+    ),
+
+    // SỬA 3: Dùng preprocess cho dueDate để hiện thông báo tiếng Việt
+    dueDate: z.preprocess((val) => {
+        if (typeof val === "string" && val.trim() !== "") return new Date(val);
+        return undefined;
+    },
+        z.instanceof(Date, { message: "Vui lòng chọn hạn nộp!" })
+            .refine((date) => !isNaN(date.getTime()), { message: "Hạn nộp không hợp lệ!" })
+    ),
 }).refine((data) => data.startDate < data.dueDate, {
     message: "Hạn nộp phải sau ngày bắt đầu!",
     path: ["dueDate"],
@@ -199,10 +268,31 @@ export const resultSchema = z.object({
     id: z.coerce.number().optional(),
     studentId: z.string().min(1, { message: "Vui lòng chọn học sinh!" }),
     score: z.coerce.number().min(0, { message: "Điểm số không hợp lệ!" }).max(100, { message: "Điểm tối đa là 100!" }),
-    // Dùng .or() để cho phép 1 trong 2 trường có dữ liệu, trường kia null
+
+    // Cho phép null/optional ban đầu, sẽ check kỹ ở superRefine
     examId: z.coerce.number().optional().nullable(),
     assignmentId: z.coerce.number().optional().nullable(),
-});
+})
+    // THÊM ĐOẠN NÀY ĐỂ BẮT LỖI CHƯA CHỌN BÀI
+    .superRefine((data, ctx) => {
+        // Kiểm tra xem có chọn cái nào chưa (ID > 0 mới tính là đã chọn)
+        const hasExam = data.examId && data.examId > 0;
+        const hasAssignment = data.assignmentId && data.assignmentId > 0;
+
+        // Nếu cả 2 đều không có -> Báo lỗi
+        if (!hasExam && !hasAssignment) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Vui lòng chọn bài kiểm tra!",
+                path: ["examId"], // Gắn lỗi này vào trường examId
+            });
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Vui lòng chọn bài tập!",
+                path: ["assignmentId"], // Gắn lỗi này vào trường assignmentId
+            });
+        }
+    });
 
 export type ResultSchema = z.infer<typeof resultSchema>;
 
@@ -210,23 +300,73 @@ export type ResultSchema = z.infer<typeof resultSchema>;
 export const lessonSchema = z.object({
     id: z.coerce.number().optional(),
     name: z.string().min(1, { message: "Tên khóa học là bắt buộc!" }),
-    day: z.enum(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"], { message: "Vui lòng chọn thứ!" }),
-    startTime: z.coerce.date({ message: "Thời gian bắt đầu không hợp lệ!" }),
-    endTime: z.coerce.date({ message: "Thời gian kết thúc không hợp lệ!" }),
-    subjectId: z.coerce.number({ message: "Vui lòng chọn môn học!" }),
-    classId: z.coerce.number({ message: "Vui lòng chọn lớp học!" }),
+
+    // Validate Thứ
+    day: z.enum(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"], {
+        errorMap: () => ({ message: "Vui lòng chọn thứ!" })
+    }),
+
+    // SỬA 1: Xử lý Start Time (hiện tiếng Việt & bắt buộc chọn)
+    startTime: z.preprocess((val) => {
+        if (typeof val === "string" && val.trim() !== "") return new Date(val);
+        return undefined;
+    },
+        z.instanceof(Date, { message: "Vui lòng chọn thời gian bắt đầu!" })
+            .refine((date) => !isNaN(date.getTime()), { message: "Thời gian không hợp lệ!" })
+    ),
+
+    // SỬA 2: Xử lý End Time (hiện tiếng Việt & bắt buộc chọn)
+    endTime: z.preprocess((val) => {
+        if (typeof val === "string" && val.trim() !== "") return new Date(val);
+        return undefined;
+    },
+        z.instanceof(Date, { message: "Vui lòng chọn thời gian kết thúc!" })
+            .refine((date) => !isNaN(date.getTime()), { message: "Thời gian không hợp lệ!" })
+    ),
+
+    subjectId: z.coerce.number({ message: "Vui lòng chọn môn học!" })
+        .min(1, { message: "Vui lòng chọn môn học!" }),
+    classId: z.coerce.number({ message: "Vui lòng chọn lớp học!" })
+        .min(1, { message: "Vui lòng chọn lớp học!" }),
     teacherId: z.string().min(1, { message: "Vui lòng chọn giảng viên!" }),
-});
+})
+    // SỬA 3: Thêm logic kiểm tra: Kết thúc phải sau Bắt đầu
+    .refine((data) => {
+        // Chỉ so sánh nếu cả 2 đều là ngày hợp lệ
+        if (data.startTime instanceof Date && data.endTime instanceof Date) {
+            return data.startTime < data.endTime;
+        }
+        return true;
+    }, {
+        message: "Thời gian kết thúc phải sau thời gian bắt đầu!",
+        path: ["endTime"], // Lỗi sẽ hiện ở ô Kết thúc
+    });
 
 export type LessonSchema = z.infer<typeof lessonSchema>;
 
 // Attendance
 export const attendanceSchema = z.object({
     id: z.coerce.number().optional(),
-    date: z.coerce.date({ message: "Ngày không hợp lệ!" }),
+
+    // SỬA 1: Xử lý ngày tháng để hiện thông báo tiếng Việt
+    date: z.preprocess((val) => {
+        // Nếu là chuỗi và có dữ liệu thì chuyển thành Date
+        if (typeof val === "string" && val.trim() !== "") {
+            return new Date(val);
+        }
+        // Nếu rỗng trả về undefined để validation phía sau bắt lỗi
+        return undefined;
+    },
+        z.instanceof(Date, { message: "Vui lòng chọn ngày!" })
+    ),
+
     present: z.boolean({ message: "Vui lòng chọn trạng thái!" }), // true = Có mặt, false = Vắng
+
     studentId: z.string().min(1, { message: "Vui lòng chọn học sinh!" }),
-    lessonId: z.coerce.number({ message: "Vui lòng chọn bài học!" }),
+
+    // SỬA 2: Thêm .min(1) để chặn giá trị rỗng (vì rỗng coerce thành 0)
+    lessonId: z.coerce.number({ message: "Vui lòng chọn bài học!" })
+        .min(1, { message: "Vui lòng chọn khóa học!" }),
 });
 
 export type AttendanceSchema = z.infer<typeof attendanceSchema>;

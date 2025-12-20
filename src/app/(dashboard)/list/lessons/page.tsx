@@ -12,21 +12,23 @@ type LessonList = Lesson & { subject: Subject } & { class: Class } & {
   teacher: Teacher;
 };
 
-
 const LessonListPage = async ({
   searchParams,
 }: {
   searchParams: { [key: string]: string | undefined };
 }) => {
-
   const { sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
-
+  // 1. CẬP NHẬT CẤU TRÚC CỘT
   const columns = [
     {
-      header: "Môn học",
+      header: "Tên khóa học", // Cột mới 1
       accessor: "name",
+    },
+    {
+      header: "Môn học",
+      accessor: "subject",
     },
     {
       header: "Lớp học",
@@ -36,6 +38,16 @@ const LessonListPage = async ({
       header: "Giảng viên",
       accessor: "teacher",
       className: "hidden md:table-cell",
+    },
+    {
+      header: "Bắt đầu", // Cột mới 2
+      accessor: "startTime",
+      className: "hidden lg:table-cell",
+    },
+    {
+      header: "Kết thúc", // Cột mới 3
+      accessor: "endTime",
+      className: "hidden lg:table-cell",
     },
     ...(role === "admin"
       ? [
@@ -47,16 +59,49 @@ const LessonListPage = async ({
       : []),
   ];
 
+  // 2. CẬP NHẬT GIAO DIỆN HÀNG (ROW)
   const renderRow = (item: LessonList) => (
     <tr
       key={item.id}
       className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
     >
+      {/* Cột Tên khóa học */}
+      <td className="p-4 font-semibold text-gray-700">{item.name}</td>
+
+      {/* Cột Môn học */}
       <td className="flex items-center gap-4 p-4">{item.subject.name}</td>
+
+      {/* Cột Lớp học */}
       <td>{item.class.name}</td>
+
+      {/* Cột Giảng viên */}
       <td className="hidden md:table-cell">
         {item.teacher.surname + " " + item.teacher.name}
       </td>
+
+      {/* Cột Thời gian bắt đầu (Format ngày giờ Việt Nam) */}
+      <td className="hidden lg:table-cell">
+        {new Intl.DateTimeFormat("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        }).format(item.startTime)}
+      </td>
+
+      {/* Cột Thời gian kết thúc */}
+      <td className="hidden lg:table-cell">
+        {new Intl.DateTimeFormat("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        }).format(item.endTime)}
+      </td>
+
+      {/* Cột Tùy chọn */}
       <td>
         <div className="flex items-center gap-2">
           {role === "admin" && (
@@ -71,11 +116,9 @@ const LessonListPage = async ({
   );
 
   const { page, ...queryParams } = searchParams;
-
   const p = page ? parseInt(page) : 1;
 
   // URL PARAMS CONDITION
-
   const query: Prisma.LessonWhereInput = {};
 
   if (queryParams) {
@@ -92,6 +135,7 @@ const LessonListPage = async ({
             query.OR = [
               { subject: { name: { contains: value, mode: "insensitive" } } },
               { teacher: { name: { contains: value, mode: "insensitive" } } },
+              { name: { contains: value, mode: "insensitive" } }, // Thêm tìm kiếm theo tên khóa học
             ];
             break;
           default:
@@ -123,12 +167,6 @@ const LessonListPage = async ({
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <TableSearch />
           <div className="flex items-center gap-4 self-end">
-            {/* <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              <Image src="/filter.png" alt="" width={14} height={14} />
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              <Image src="/sort.png" alt="" width={14} height={14} />
-            </button> */}
             {role === "admin" && <FormContainer table="lesson" type="create" />}
           </div>
         </div>

@@ -82,7 +82,7 @@ const SingleStudentPage = async ({
             {/* Stat 2: Cấp bậc (Lấy ký tự đầu của lớp, vd: 6A -> 6) */}
             <div className="flex flex-col items-center bg-white p-3 rounded-md shadow-sm w-20">
               <span className="text-lg font-bold text-lamaPurple">
-                {student.class.name.charAt(0)}
+                {student.gradeId}
               </span>
               <span className="text-xs text-gray-500 font-medium uppercase">
                 Cấp

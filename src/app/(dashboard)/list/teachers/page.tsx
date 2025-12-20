@@ -43,11 +43,11 @@ const TeacherListPage = async ({
       accessor: "phone",
       className: "hidden lg:table-cell",
     },
-    {
-      header: "địa chỉ",
-      accessor: "address",
-      className: "hidden lg:table-cell",
-    },
+    // {
+    //   header: "địa chỉ",
+    //   accessor: "address",
+    //   className: "hidden lg:table-cell",
+    // },
     ...(role === "admin"
       ? [
         {
@@ -72,19 +72,19 @@ const TeacherListPage = async ({
           className="md:hidden xl:block w-10 h-10 rounded-full object-cover"
         />
         <div className="flex flex-col">
-          <h3 className="font-semibold">{item.name}</h3>
+          <h3 className="font-semibold">{item.surname} {item.name}</h3>
           <p className="text-xs text-gray-500">{item?.email}</p>
         </div>
       </td>
       <td className="hidden md:table-cell">{item.username}</td>
       <td className="hidden md:table-cell">
-        {item.subjects.map((subject) => subject.name).join(",")}
+        {item.subjects.map((subject) => subject.name).join(", ")}
       </td>
       <td className="hidden md:table-cell">
-        {item.classes.map((classItem) => classItem.name).join(",")}
+        {item.classes.map((classItem) => classItem.name).join(", ")}
       </td>
       <td className="hidden md:table-cell">{item.phone}</td>
-      <td className="hidden md:table-cell">{item.address}</td>
+      {/* <td className="hidden md:table-cell">{item.address}</td> */}
       <td>
         <div className="flex items-center gap-2">
           <Link href={`/list/teachers/${item.id}`}>

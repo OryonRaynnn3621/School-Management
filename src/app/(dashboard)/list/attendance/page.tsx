@@ -51,7 +51,7 @@ const AttendanceListPage = async ({
             <td className="hidden md:table-cell">{item.lesson.name}</td>
             <td className="hidden md:table-cell">{item.lesson.class.name}</td>
             <td className="hidden md:table-cell">
-                {new Date(item.date).toLocaleDateString("vi-VN")}
+                {new Date(item.date).toLocaleDateString("en-US")}
             </td>
             <td className="hidden md:table-cell">
                 {item.present ? (

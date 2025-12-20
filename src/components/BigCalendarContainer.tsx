@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import dynamic from "next/dynamic";
-import { adjustScheduleToCurrentWeek } from "@/lib/utils";
+// XÓA DÒNG NÀY: import { adjustScheduleToCurrentWeek } from "@/lib/utils"; 
 
 // Import BigCalendar as CLIENT component
 const BigCalendar = dynamic(() => import("./BigCalender"), { ssr: false });
@@ -20,17 +20,19 @@ const BigCalendarContainer = async ({
         },
     });
 
+    // Giữ nguyên dữ liệu gốc, không qua hàm adjustScheduleToCurrentWeek
     const data = dataRes.map((lesson) => ({
         title: lesson.name,
         start: lesson.startTime,
         end: lesson.endTime,
     }));
 
-    const schedule = adjustScheduleToCurrentWeek(data);
+    // BỎ DÒNG NÀY: const schedule = adjustScheduleToCurrentWeek(data);
 
     return (
-        <div>
-            <BigCalendar data={schedule} />
+        <div className="">
+            {/* Truyền trực tiếp data vào lịch */}
+            <BigCalendar data={data} />
         </div>
     );
 };

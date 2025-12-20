@@ -8,6 +8,7 @@ import { parentSchema, ParentSchema } from "@/lib/formValidationSchemas";
 import { createParent, updateParent } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import { z } from "zod"; // <--- 1. THÊM IMPORT NÀY
 
 const ParentForm = ({
     type,
@@ -20,12 +21,22 @@ const ParentForm = ({
     setOpen: Dispatch<SetStateAction<boolean>>;
     relatedData?: any;
 }) => {
+
+    // 2. TẠO SCHEMA ĐỘNG DỰA VÀO TYPE
+    // Nếu là "create": Ghi đè trường password thành bắt buộc
+    // Nếu là "update": Dùng parentSchema gốc (password tùy chọn)
+    const schema = type === "create"
+        ? parentSchema.extend({
+            password: z.string().min(8, { message: "Mật khẩu phải có ít nhất 8 ký tự!" })
+        })
+        : parentSchema;
+
     const {
         register,
         handleSubmit,
         formState: { errors },
     } = useForm<ParentSchema>({
-        resolver: zodResolver(parentSchema),
+        resolver: zodResolver(schema), // SỬA: Dùng biến 'schema' vừa tạo thay vì 'parentSchema' cứng
         defaultValues: data,
     });
 
@@ -90,14 +101,14 @@ const ParentForm = ({
             </span>
             <div className="flex justify-between flex-wrap gap-4">
                 <InputField
-                    label="Họ"
+                    label="Tên"
                     name="name"
                     defaultValue={data?.name}
                     register={register}
                     error={errors.name}
                 />
                 <InputField
-                    label="Tên"
+                    label="Họ"
                     name="surname"
                     defaultValue={data?.surname}
                     register={register}

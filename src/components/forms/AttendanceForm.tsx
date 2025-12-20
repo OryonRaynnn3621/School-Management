@@ -31,7 +31,7 @@ const AttendanceForm = ({
     } = useForm<AttendanceSchema>({
         resolver: zodResolver(attendanceSchema),
         defaultValues: {
-            present: true, // Mặc định là có mặt
+            present: true,
         },
     });
 
@@ -40,11 +40,12 @@ const AttendanceForm = ({
             reset({
                 studentId: data.studentId,
                 lessonId: data.lessonId,
-                present: data.present,
+                // SỬA 1: Chuyển Boolean từ DB thành String để khớp với <option value="true">
+                present: data.present ? "true" : "false",
                 date: data.date
                     ? new Date(data.date).toISOString().split("T")[0]
                     : undefined,
-            } as any); // <--- THÊM 'as any' VÀO ĐÂY ĐỂ FIX LỖI
+            } as any);
         }
     }, [data, type, reset]);
 
@@ -100,7 +101,7 @@ const AttendanceForm = ({
                     {errors.studentId?.message && <p className="text-xs text-red-400">{errors.studentId.message.toString()}</p>}
                 </div>
 
-                {/* Bài học */}
+                {/* Khóa học */}
                 <div className="flex flex-col gap-2 w-full">
                     <label className="text-xs text-gray-500">Khóa học</label>
                     <select className={inputClass} {...register("lessonId")}>
@@ -121,13 +122,14 @@ const AttendanceForm = ({
                     {errors.date?.message && <p className="text-xs text-red-400">{errors.date.message.toString()}</p>}
                 </div>
 
-                {/* Trạng thái (Có mặt/Vắng) */}
+                {/* Trạng thái */}
                 <div className="flex flex-col gap-2 w-full">
                     <label className="text-xs text-gray-500">Trạng thái</label>
                     <select
                         className={inputClass}
                         {...register("present", {
-                            setValueAs: (v) => v === "true" // Chuyển chuỗi "true"/"false" thành boolean
+                            // SỬA 2: Logic so sánh an toàn cho cả Boolean và String
+                            setValueAs: (v) => v === "true" || v === true
                         })}
                     >
                         <option value="true">Có mặt</option>

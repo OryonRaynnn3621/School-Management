@@ -19,6 +19,15 @@ const AnnouncementForm = ({
     setOpen: Dispatch<SetStateAction<boolean>>;
     relatedData?: any;
 }) => {
+
+    // Giữ nguyên hàm format để hiển thị đúng ngày
+    const formatDate = (dateString: any) => {
+        if (!dateString) return undefined;
+        const date = new Date(dateString);
+        const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+        return localDate.toISOString().split("T")[0];
+    };
+
     const {
         register,
         handleSubmit,
@@ -28,9 +37,7 @@ const AnnouncementForm = ({
         defaultValues: data
             ? {
                 ...data,
-                date: data.date
-                    ? new Date(data.date).toISOString().split("T")[0]
-                    : undefined,
+                date: formatDate(data.date),
             }
             : undefined,
     });
@@ -39,7 +46,6 @@ const AnnouncementForm = ({
     const router = useRouter();
 
     const onSubmit = handleSubmit((formData) => {
-        // Ensure date is processed correctly if needed
         const submittedData = {
             ...formData,
             date: new Date(formData.date),
@@ -72,10 +78,8 @@ const AnnouncementForm = ({
                 {type === "create" ? "Tạo thông báo mới" : "Cập nhật thông báo"}
             </h1>
 
-            <div className="flex flex-col gap-6"> {/* Tăng gap lên 6 cho thoáng */}
-
-                {/* --- HÀNG 1: TIÊU ĐỀ (Full Width) --- */}
-                {/* Thay InputField bằng thẻ input HTML thường để kiểm soát width */}
+            <div className="flex flex-col gap-6">
+                {/* Tiêu đề */}
                 <div className="flex flex-col gap-2 w-full">
                     <label className="text-xs text-gray-500">Tiêu đề</label>
                     <input
@@ -90,16 +94,14 @@ const AnnouncementForm = ({
                     )}
                 </div>
 
-                {/* --- HÀNG 2: NGÀY & LỚP (Mỗi bên 50%) --- */}
+                {/* Ngày & Lớp */}
                 <div className="flex w-full gap-4 flex-col md:flex-row">
-
-                    {/* Ô Ngày (Date) */}
                     <div className="flex flex-col gap-2 w-full md:w-1/2">
                         <label className="text-xs text-gray-500">Ngày</label>
+                        {/* ĐÃ XÓA thuộc tính min={...} */}
                         <input
                             type="date"
                             {...register("date")}
-                            defaultValue={data?.date}
                             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full cursor-pointer"
                         />
                         {errors.date?.message && (
@@ -107,7 +109,6 @@ const AnnouncementForm = ({
                         )}
                     </div>
 
-                    {/* Ô Lớp (Class) */}
                     <div className="flex flex-col gap-2 w-full md:w-1/2">
                         <label className="text-xs text-gray-500">Lớp (Tùy chọn)</label>
                         <select
@@ -130,7 +131,7 @@ const AnnouncementForm = ({
                     </div>
                 </div>
 
-                {/* --- HÀNG 3: NỘI DUNG (Textarea) --- */}
+                {/* Nội dung */}
                 <div className="flex flex-col gap-2 w-full">
                     <label className="text-xs text-gray-500">Nội dung</label>
                     <textarea

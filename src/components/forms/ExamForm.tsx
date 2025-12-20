@@ -20,7 +20,6 @@ const ExamForm = ({
     relatedData?: any;
 }) => {
 
-    // Helper: Format ngày từ DB (ISO) sang input (YYYY-MM-DDTHH:mm)
     const formatDateTime = (dateString: any) => {
         if (!dateString) return "";
         const date = new Date(dateString);
@@ -44,12 +43,20 @@ const ExamForm = ({
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
 
+    // SỬA: Chỉ giữ lại callback thành công, XÓA callback lỗi (tham số thứ 2)
     const onSubmit = handleSubmit((formData) => {
+        const submittedData = {
+            ...formData,
+            // Chuyển đổi lại thành Date object khi gửi lên server
+            startTime: new Date(formData.startTime),
+            endTime: new Date(formData.endTime),
+        };
+
         startTransition(async () => {
             const action = type === "create" ? createExam : updateExam;
             try {
                 // @ts-ignore
-                const result = await action({ success: false, error: false }, formData);
+                const result = await action({ success: false, error: false }, submittedData);
 
                 if (result.success) {
                     toast.success(`Lịch kiểm tra đã được ${type === "create" ? "tạo" : "cập nhật"}!`);
@@ -62,12 +69,8 @@ const ExamForm = ({
                 toast.error("Lỗi kết nối!");
             }
         });
-    }, (validationErrors) => {
-        console.log(validationErrors);
-        if (validationErrors.endTime?.message) {
-            toast.error(validationErrors.endTime.message as string);
-        }
     });
+    // ^--- Đã xóa đoạn ", (validationErrors) => { ... }" ở đây để tắt Toast lỗi
 
     const { lessons } = relatedData;
 
@@ -79,9 +82,9 @@ const ExamForm = ({
 
             <div className="flex justify-between flex-wrap gap-4">
 
-                {/* --- DÒNG 1: TIÊU ĐỀ + MÔN HỌC --- */}
+                {/* --- DÒNG 1 --- */}
 
-                {/* Tiêu đề (Chiếm 48% chiều rộng) */}
+                {/* Tiêu đề */}
                 <div className="flex flex-col gap-2 w-full md:w-[48%]">
                     <label className="text-xs text-gray-500">Tiêu đề</label>
                     <input
@@ -89,20 +92,24 @@ const ExamForm = ({
                         {...register("title")}
                         defaultValue={data?.title}
                         className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+                        placeholder="Nhập tiêu đề..."
                     />
                     {errors.title?.message && (
                         <p className="text-xs text-red-400">{errors.title.message.toString()}</p>
                     )}
                 </div>
 
-                {/* Lesson (Chiếm 48% chiều rộng) */}
+                {/* Khóa học (Lesson) */}
                 <div className="flex flex-col gap-2 w-full md:w-[48%]">
                     <label className="text-xs text-gray-500">Khóa học</label>
                     <select
-                        className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+                        className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full cursor-pointer"
                         {...register("lessonId")}
                         defaultValue={data?.lessonId}
                     >
+                        {/* THÊM: Option mặc định */}
+                        <option value="">-- Chọn khóa học --</option>
+
                         {lessons.map((lesson: { id: number; name: string }) => (
                             <option value={lesson.id} key={lesson.id}>
                                 {lesson.name}
@@ -116,35 +123,34 @@ const ExamForm = ({
                     )}
                 </div>
 
-                {/* --- DÒNG 2: NGÀY BẮT ĐẦU + NGÀY KẾT THÚC --- */}
+                {/* --- DÒNG 2 --- */}
 
-                {/* Bắt đầu (Chiếm 48% chiều rộng) */}
+                {/* Bắt đầu */}
                 <div className="flex flex-col gap-2 w-full md:w-[48%]">
                     <label className="text-xs text-gray-500">Bắt đầu</label>
                     <input
                         type="datetime-local"
                         {...register("startTime")}
-                        className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+                        className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full cursor-pointer"
                     />
                     {errors.startTime?.message && (
                         <p className="text-xs text-red-400">{errors.startTime.message.toString()}</p>
                     )}
                 </div>
 
-                {/* Kết thúc (Chiếm 48% chiều rộng) */}
+                {/* Kết thúc */}
                 <div className="flex flex-col gap-2 w-full md:w-[48%]">
                     <label className="text-xs text-gray-500">Kết thúc</label>
                     <input
                         type="datetime-local"
                         {...register("endTime")}
-                        className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+                        className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full cursor-pointer"
                     />
                     {errors.endTime?.message && (
                         <p className="text-xs text-red-400">{errors.endTime.message.toString()}</p>
                     )}
                 </div>
 
-                {/* ID ẩn */}
                 {data && (
                     <input type="hidden" {...register("id")} defaultValue={data?.id} />
                 )}
@@ -152,7 +158,7 @@ const ExamForm = ({
             </div>
 
             <button
-                className="bg-blue-400 text-white p-2 rounded-md disabled:bg-blue-200"
+                className="bg-blue-400 text-white p-2 rounded-md disabled:bg-blue-200 hover:bg-blue-500 transition-colors"
                 disabled={isPending}
             >
                 {isPending ? "Đang xử lý..." : (type === "create" ? "Tạo" : "Cập nhật")}

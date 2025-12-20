@@ -87,25 +87,25 @@ const ExamListPage = async ({
       )}
       {/* ----------------------------------------------------------- */}
 
-      <td className="hidden md:table-cell">
+      <td className="hidden lg:table-cell">
         {new Intl.DateTimeFormat("en-US", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
           hour: "2-digit",
           minute: "2-digit",
-          hour12: false,
-        }).format(new Date(item.startTime))}
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        }).format(item.startTime)}
       </td>
-      <td className="hidden md:table-cell">
+
+      {/* Cột Thời gian kết thúc */}
+      <td className="hidden lg:table-cell">
         {new Intl.DateTimeFormat("en-US", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
           hour: "2-digit",
           minute: "2-digit",
-          hour12: false,
-        }).format(new Date(item.endTime))}
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        }).format(item.endTime)}
       </td>
       <td>
         <div className="flex items-center gap-2">
@@ -208,12 +208,7 @@ const ExamListPage = async ({
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <TableSearch />
           <div className="flex items-center gap-4 self-end">
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              <Image src="/filter.png" alt="" width={14} height={14} />
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              <Image src="/sort.png" alt="" width={14} height={14} />
-            </button>
+
             {(role === "admin" || role === "teacher") && (
               <FormContainer table="exam" type="create" />
             )}

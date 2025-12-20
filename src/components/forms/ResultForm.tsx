@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import InputField from "../InputField";
 import { Dispatch, SetStateAction, useEffect, useState, useTransition } from "react";
 import { resultSchema, ResultSchema } from "@/lib/formValidationSchemas";
 import { createResult, updateResult } from "@/lib/actions";
@@ -28,7 +27,7 @@ const ResultForm = ({
     const {
         register,
         handleSubmit,
-        reset, // Lấy hàm reset để nạp dữ liệu cũ
+        reset,
         formState: { errors },
     } = useForm<ResultSchema>({
         resolver: zodResolver(resultSchema),
@@ -37,18 +36,14 @@ const ResultForm = ({
         },
     });
 
-    // --- USE EFFECT: NẠP DỮ LIỆU CŨ ---
     useEffect(() => {
         if (type === "update" && data) {
-            // 1. Tự động xác định loại bài thi dựa trên ID có sẵn
             const currentType = data.examId ? "exam" : "assignment";
             setAssessmentType(currentType);
 
-            // 2. Điền dữ liệu vào form
             reset({
                 studentId: data.studentId,
                 score: data.score,
-                // Ép kiểu về số để dropdown nhận diện được
                 examId: data.examId ? Number(data.examId) : null,
                 assignmentId: data.assignmentId ? Number(data.assignmentId) : null,
             });
@@ -61,7 +56,7 @@ const ResultForm = ({
     const onSubmit = handleSubmit((formData) => {
         const submittedData = { ...formData };
 
-        // Xóa ID thừa của loại không chọn
+        // Xóa ID thừa của loại không chọn để tránh gửi rác lên server
         if (assessmentType === "exam") {
             submittedData.assignmentId = null;
             if (submittedData.examId) submittedData.examId = Number(submittedData.examId);
@@ -103,7 +98,6 @@ const ResultForm = ({
 
                 {/* --- CỘT TRÁI --- */}
                 <div className="flex flex-col gap-4">
-
                     {/* Chọn Học sinh */}
                     <div className="flex flex-col gap-2 w-full">
                         <label className="text-xs text-gray-500">Học sinh</label>
@@ -123,16 +117,15 @@ const ResultForm = ({
                         )}
                     </div>
 
-                    {/* Điểm số (Đã chỉnh height) */}
+                    {/* Điểm số */}
                     <div className="flex flex-col gap-2 w-full">
                         <label className="text-xs text-gray-500">Điểm số (0-100)</label>
-                        {/* Dùng thẻ input thường để dễ chỉnh style */}
                         <input
                             type="number"
                             min={0}
                             max={100}
                             {...register("score")}
-                            className="ring-[1.5px] ring-gray-300 p-3 rounded-md text-sm w-full h-[50px]" // Chiều cao cố định 50px
+                            className="ring-[1.5px] ring-gray-300 p-3 rounded-md text-sm w-full h-[50px]"
                             placeholder="Nhập điểm..."
                         />
                         {errors.score?.message && (
@@ -144,11 +137,10 @@ const ResultForm = ({
                 {/* --- CỘT PHẢI --- */}
                 <div className="flex flex-col gap-4">
 
-                    {/* Loại bài thi - 2 Ô CHỌN TO */}
+                    {/* Loại bài thi */}
                     <div className="flex flex-col gap-2 w-full">
                         <label className="text-xs text-gray-500">Loại kết quả</label>
                         <div className="flex gap-4">
-                            {/* Nút Exam */}
                             <div
                                 onClick={() => setAssessmentType("exam")}
                                 className={`flex-1 border rounded-md cursor-pointer flex flex-col items-center justify-center transition-all h-[50px] ${assessmentType === "exam"
@@ -159,7 +151,6 @@ const ResultForm = ({
                                 <span>📝 Bài kiểm tra</span>
                             </div>
 
-                            {/* Nút Assignment */}
                             <div
                                 onClick={() => setAssessmentType("assignment")}
                                 className={`flex-1 border rounded-md cursor-pointer flex flex-col items-center justify-center transition-all h-[50px] ${assessmentType === "assignment"
@@ -167,7 +158,7 @@ const ResultForm = ({
                                     : "border-gray-200 text-gray-500 hover:bg-gray-50"
                                     }`}
                             >
-                                <span>📚 Bài tập về nhà</span>
+                                <span>📚 Bài tập</span>
                             </div>
                         </div>
                     </div>
@@ -179,29 +170,43 @@ const ResultForm = ({
                         </label>
 
                         {assessmentType === "exam" ? (
-                            <select
-                                className="ring-[1.5px] ring-gray-300 p-3 rounded-md text-sm w-full cursor-pointer"
-                                {...register("examId")}
-                            >
-                                <option value="">-- Chọn Exam --</option>
-                                {exams?.map((exam: { id: number; title: string }) => (
-                                    <option value={exam.id} key={exam.id}>
-                                        {exam.title}
-                                    </option>
-                                ))}
-                            </select>
+                            <>
+                                <select
+                                    className="ring-[1.5px] ring-gray-300 p-3 rounded-md text-sm w-full cursor-pointer"
+                                    {...register("examId")}
+                                >
+                                    {/* SỬA: Đổi text hiển thị */}
+                                    <option value="">-- Chọn bài kiểm tra --</option>
+                                    {exams?.map((exam: { id: number; title: string }) => (
+                                        <option value={exam.id} key={exam.id}>
+                                            {exam.title}
+                                        </option>
+                                    ))}
+                                </select>
+                                {/* THÊM: Hiển thị lỗi Exam */}
+                                {errors.examId?.message && (
+                                    <p className="text-xs text-red-400">{errors.examId.message.toString()}</p>
+                                )}
+                            </>
                         ) : (
-                            <select
-                                className="ring-[1.5px] ring-gray-300 p-3 rounded-md text-sm w-full cursor-pointer"
-                                {...register("assignmentId")}
-                            >
-                                <option value="">-- Chọn Assignment --</option>
-                                {assignments?.map((assignment: { id: number; title: string }) => (
-                                    <option value={assignment.id} key={assignment.id}>
-                                        {assignment.title}
-                                    </option>
-                                ))}
-                            </select>
+                            <>
+                                <select
+                                    className="ring-[1.5px] ring-gray-300 p-3 rounded-md text-sm w-full cursor-pointer"
+                                    {...register("assignmentId")}
+                                >
+                                    {/* SỬA: Đổi text hiển thị */}
+                                    <option value="">-- Chọn bài tập --</option>
+                                    {assignments?.map((assignment: { id: number; title: string }) => (
+                                        <option value={assignment.id} key={assignment.id}>
+                                            {assignment.title}
+                                        </option>
+                                    ))}
+                                </select>
+                                {/* THÊM: Hiển thị lỗi Assignment */}
+                                {errors.assignmentId?.message && (
+                                    <p className="text-xs text-red-400">{errors.assignmentId.message.toString()}</p>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>
@@ -218,4 +223,4 @@ const ResultForm = ({
     );
 };
 
-export default ResultForm;
+export default ResultForm;  

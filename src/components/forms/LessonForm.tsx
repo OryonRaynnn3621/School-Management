@@ -21,7 +21,7 @@ const LessonForm = ({
 }) => {
     const { subjects, classes, teachers } = relatedData;
 
-    // Helper: Format ngày giờ cho input datetime-local
+    // Format ngày giờ cho input
     const formatDateTime = (dateString: any) => {
         if (!dateString) return "";
         const date = new Date(dateString);
@@ -73,7 +73,6 @@ const LessonForm = ({
         });
     });
 
-    // Class chung cho các ô input để đồng bộ chiều cao và style
     const inputClass = "ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full h-[40px]";
 
     return (
@@ -99,7 +98,9 @@ const LessonForm = ({
                 {/* Thứ trong tuần */}
                 <div className="flex flex-col gap-2 w-full">
                     <label className="text-xs text-gray-500">Thứ</label>
-                    <select className={inputClass} {...register("day")}>
+                    <select className={inputClass} {...register("day")} defaultValue="">
+                        {/* THÊM: Option mặc định rỗng */}
+                        <option value="">-- Chọn thứ --</option>
                         <option value="MONDAY">Thứ Hai</option>
                         <option value="TUESDAY">Thứ Ba</option>
                         <option value="WEDNESDAY">Thứ Tư</option>
@@ -134,7 +135,7 @@ const LessonForm = ({
                 {/* Chọn Môn học */}
                 <div className="flex flex-col gap-2 w-full">
                     <label className="text-xs text-gray-500">Môn học</label>
-                    <select className={inputClass} {...register("subjectId")}>
+                    <select className={inputClass} {...register("subjectId")} defaultValue="">
                         <option value="">-- Chọn môn học --</option>
                         {subjects?.map((subject: { id: number; name: string }) => (
                             <option value={subject.id} key={subject.id}>{subject.name}</option>
@@ -146,7 +147,7 @@ const LessonForm = ({
                 {/* Chọn Lớp học */}
                 <div className="flex flex-col gap-2 w-full">
                     <label className="text-xs text-gray-500">Lớp học</label>
-                    <select className={inputClass} {...register("classId")}>
+                    <select className={inputClass} {...register("classId")} defaultValue="">
                         <option value="">-- Chọn lớp học --</option>
                         {classes?.map((classItem: { id: number; name: string }) => (
                             <option value={classItem.id} key={classItem.id}>{classItem.name}</option>
@@ -158,7 +159,7 @@ const LessonForm = ({
                 {/* Chọn Giảng viên */}
                 <div className="flex flex-col gap-2 w-full md:col-span-2">
                     <label className="text-xs text-gray-500">Giảng viên phụ trách</label>
-                    <select className={inputClass} {...register("teacherId")}>
+                    <select className={inputClass} {...register("teacherId")} defaultValue="">
                         <option value="">-- Chọn giảng viên --</option>
                         {teachers?.map((teacher: { id: string; name: string; surname: string }) => (
                             <option value={teacher.id} key={teacher.id}>

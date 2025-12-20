@@ -20,7 +20,6 @@ const EventForm = ({
     relatedData?: any;
 }) => {
 
-    // Helper to format ISO date string to YYYY-MM-DDTHH:mm for input
     const formatDateTime = (dateString: any) => {
         if (!dateString) return "";
         const date = new Date(dateString);
@@ -81,8 +80,7 @@ const EventForm = ({
             </h1>
 
             <div className="flex flex-col gap-6">
-
-                {/* Title */}
+                {/* Tiêu đề */}
                 <div className="flex flex-col gap-2 w-full">
                     <label className="text-xs text-gray-500">Tiêu đề</label>
                     <input
@@ -97,7 +95,7 @@ const EventForm = ({
                     )}
                 </div>
 
-                {/* Class Selection */}
+                {/* Chọn Lớp */}
                 <div className="flex flex-col gap-2 w-full">
                     <label className="text-xs text-gray-500">Lớp (Tùy chọn)</label>
                     <select
@@ -112,18 +110,13 @@ const EventForm = ({
                             </option>
                         ))}
                     </select>
-                    {errors.classId?.message && (
-                        <p className="text-xs text-red-400">
-                            {errors.classId.message.toString()}
-                        </p>
-                    )}
                 </div>
 
                 {/* Start Time & End Time */}
                 <div className="flex w-full gap-4 flex-col md:flex-row">
-                    {/* Start Time */}
                     <div className="flex flex-col gap-2 w-full md:w-1/2">
                         <label className="text-xs text-gray-500">Thời gian bắt đầu</label>
+                        {/* ĐÃ XÓA min={...} */}
                         <input
                             type="datetime-local"
                             {...register("startTime")}
@@ -134,9 +127,9 @@ const EventForm = ({
                         )}
                     </div>
 
-                    {/* End Time */}
                     <div className="flex flex-col gap-2 w-full md:w-1/2">
                         <label className="text-xs text-gray-500">Thời gian kết thúc</label>
+                        {/* ĐÃ XÓA min={...} */}
                         <input
                             type="datetime-local"
                             {...register("endTime")}
@@ -148,9 +141,9 @@ const EventForm = ({
                     </div>
                 </div>
 
-                {/* Description */}
+                {/* Mô tả */}
                 <div className="flex flex-col gap-2 w-full">
-                    <label className="text-xs text-gray-500">Mô tả (Tùy chọn)</label>
+                    <label className="text-xs text-gray-500">Mô tả</label>
                     <textarea
                         {...register("description")}
                         defaultValue={data?.description}

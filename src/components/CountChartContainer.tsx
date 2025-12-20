@@ -17,7 +17,7 @@ const CountChartContainer = async () => {
             {/* --- HEADER --- */}
             <div className="flex justify-between items-center">
                 <h1 className="text-lg font-bold text-gray-800">Học sinh</h1>
-                <Image src="/moreDark.png" alt="" width={20} height={20} className="cursor-pointer opacity-60 hover:opacity-100" />
+                {/* <Image src="/moreDark.png" alt="" width={20} height={20} className="cursor-pointer opacity-60 hover:opacity-100" /> */}
             </div>
 
             {/* --- CHART (Chiếm phần lớn diện tích) --- */}

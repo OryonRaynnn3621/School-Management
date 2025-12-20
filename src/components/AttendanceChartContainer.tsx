@@ -5,12 +5,16 @@ import prisma from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 const AttendanceChartContainer = async () => {
-    // ... (Giữ nguyên logic lấy dữ liệu Date) ...
     const today = new Date();
     const dayOfWeek = today.getDay();
     const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
     const lastMonday = new Date(today);
     lastMonday.setDate(today.getDate() - daysSinceMonday);
+
+    // --- SỬA LỖI Ở ĐÂY: Reset giờ về 00:00:00 ---
+    lastMonday.setHours(0, 0, 0, 0);
+    // ------------------------------------------
 
     const resData = await prisma.attendance.findMany({
         where: {
@@ -36,7 +40,9 @@ const AttendanceChartContainer = async () => {
 
     resData.forEach((item) => {
         const itemDate = new Date(item.date);
-        const dayOfWeek = itemDate.getDay();
+        const dayOfWeek = itemDate.getDay(); // 0 (Sun) - 6 (Sat)
+
+        // Chỉ xử lý từ Thứ 2 (1) đến Thứ 6 (5)
         if (dayOfWeek >= 1 && dayOfWeek <= 5) {
             const dayName = daysOfWeek[dayOfWeek - 1];
             if (item.present) {
@@ -56,8 +62,7 @@ const AttendanceChartContainer = async () => {
     return (
         <div className="bg-white rounded-xl w-full h-full p-4 shadow-md border border-gray-100">
             <div className="flex justify-between items-center mb-4">
-                <h1 className="text-lg font-bold text-gray-800">Chuyên cần (Tuần này)</h1>
-                <Image src="/moreDark.png" alt="" width={20} height={20} className="cursor-pointer opacity-60 hover:opacity-100" />
+                <h1 className="text-lg font-bold text-gray-800">Chuyên cần</h1>
             </div>
             <div className="w-full h-[90%]">
                 <AttendanceChart data={data} />

@@ -9,6 +9,7 @@ import { createTeacher, updateTeacher } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { CldUploadWidget } from "next-cloudinary";
+import { z } from "zod"; // <--- 1. THÊM IMPORT NÀY
 
 const TeacherForm = ({
   type,
@@ -21,13 +22,23 @@ const TeacherForm = ({
   setOpen: Dispatch<SetStateAction<boolean>>;
   relatedData?: any;
 }) => {
+
+  // 2. TẠO SCHEMA ĐỘNG:
+  // - Nếu Create: Mật khẩu là bắt buộc (min 8 ký tự).
+  // - Nếu Update: Mật khẩu là tùy chọn (để trống được).
+  const schema = type === "create"
+    ? teacherSchema.extend({
+      password: z.string().min(8, { message: "Mật khẩu phải có ít nhất 8 ký tự!" })
+    })
+    : teacherSchema;
+
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
   } = useForm<TeacherSchema>({
-    resolver: zodResolver(teacherSchema),
+    resolver: zodResolver(schema), // SỬA: Dùng 'schema' động thay vì 'teacherSchema' cứng
     defaultValues: {
       subjects: [],
     },
@@ -48,6 +59,14 @@ const TeacherForm = ({
         subjects: data.subjects
           ? data.subjects.map((subject: { id: number }) => String(subject.id))
           : [],
+
+        // --- 3. FIX LỖI "Expected string, received null" ---
+        // Chuyển đổi null từ database thành chuỗi rỗng "" để form hiểu
+        email: data.email || "",
+        phone: data.phone || "",
+        address: data.address || "",
+        img: data.img || "",
+        // --------------------------------------------------
       });
     }
   }, [data, type, reset]);
@@ -82,7 +101,6 @@ const TeacherForm = ({
   });
 
   const { subjects } = relatedData;
-  // Class chung để đồng bộ style (giống StudentForm)
   const inputClass = "ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full h-[40px]";
 
   return (
@@ -91,7 +109,7 @@ const TeacherForm = ({
         {type === "create" ? "Thêm giảng viên mới" : "Cập nhật thông tin giảng viên"}
       </h1>
 
-      {/* --- PHẦN 1: THÔNG TIN XÁC THỰC (3 Cột) --- */}
+      {/* --- PHẦN 1: THÔNG TIN XÁC THỰC --- */}
       <div className="flex flex-col gap-4">
         <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
           Thông tin xác thực
@@ -114,12 +132,14 @@ const TeacherForm = ({
             <label className="text-xs text-gray-500">Mật khẩu</label>
             <input type="password" {...register("password")} className={inputClass} />
             {errors.password?.message && <p className="text-xs text-red-400">{errors.password.message.toString()}</p>}
+
+            {/* Chỉ hiện chú thích khi update */}
             {type === "update" && <span className="text-[10px] text-gray-400 -mt-1">(Để trống nếu không đổi)</span>}
           </div>
         </div>
       </div>
 
-      {/* --- PHẦN 2: THÔNG TIN CÁ NHÂN (2 Cột) --- */}
+      {/* --- PHẦN 2: THÔNG TIN CÁ NHÂN --- */}
       <div className="flex flex-col gap-4">
         <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
           Thông tin cá nhân
@@ -156,7 +176,6 @@ const TeacherForm = ({
             {errors.birthday?.message && <p className="text-xs text-red-400">{errors.birthday.message.toString()}</p>}
           </div>
 
-          {/* Giới tính */}
           <div className="flex flex-col gap-2 w-full">
             <label className="text-xs text-gray-500">Giới tính</label>
             <select className={inputClass} {...register("sex")}>
@@ -173,7 +192,7 @@ const TeacherForm = ({
       {/* --- PHẦN 3: MÔN HỌC & UPLOAD ẢNH --- */}
       <div className="flex w-full gap-4 flex-col md:flex-row">
 
-        {/* Chọn Môn Học (Grid Checkbox) */}
+        {/* Chọn Môn Học */}
         <div className="flex flex-col gap-2 w-full md:w-1/2">
           <label className="text-xs text-gray-500">Môn giảng dạy</label>
           <div className="border border-gray-300 rounded-md p-4 h-40 overflow-y-auto grid grid-cols-2 gap-2 bg-white">
